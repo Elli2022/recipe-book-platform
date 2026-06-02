@@ -1,88 +1,103 @@
-# Receptbok
+# Recipe Book Platform
 
-Modern Next.js‑app för publika recept, kontoinloggning, sparade favoriter och PWA på mobil.
+![Next.js](https://img.shields.io/badge/Next.js-16-000000)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
+![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3ECF8E)
+![Netlify](https://img.shields.io/badge/Deploy-Netlify-00C7B7)
 
-## Projekt och branching
+Full-stack recipe collection app: browse and search recipes, save favorites, and manage your personal cookbook. Built with Next.js, Supabase, and a PWA-ready frontend (Swedish UI).
 
-- Versionshistorik: `VERSION_HISTORY.md`
-- Bidrag: `CONTRIBUTING.md`
+**Live demo:** [recipe-book-platform.netlify.app](https://recipe-book-platform.netlify.app)
 
-## Stack
+## Highlights
 
-- Next.js, React, TypeScript  
-- Tailwind CSS  
-- Supabase (Postgres + Auth) via Next.js API‑routes  
-- Netlify (se `netlify.toml`)  
-- PWA
+- **Recipe library** with search, categories, and detail pages
+- **Authentication** via Supabase (register, login, email callback)
+- **Favorites** synced for logged-in users
+- **Hybrid routing** — App Router home + Pages Router for library and API routes
+- **PWA support** — manifest, service worker, mobile-friendly layout
+- **CI** — GitHub Actions lint and build on every push
 
-## Supabase
+## Screenshots
 
-1. Skapa projekt på [supabase.com](https://supabase.com).
-2. Kör SQL från `supabase/migrations/` i ordning (se [supabase/README.md](supabase/README.md)). Övriga `.sql` i `supabase/` är äldre patchar vid behov.
-3. Under utveckling kan du stänga av **Confirm email** under Authentication → Providers om du vill att `signUp` direkt får session.
+| Home | Recipe library | Recipe detail |
+|------|----------------|---------------|
+| ![Home](./frontend/public/screenshots/home.png) | ![Library](./frontend/public/screenshots/library.png) | ![Detail](./frontend/public/screenshots/detail.png) |
 
-## Snabbstart (frontend)
+| Login | Saved recipes |
+|-------|----------------|
+| ![Login](./frontend/public/screenshots/login.png) | ![Saved](./frontend/public/screenshots/saved.png) |
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| Backend | Next.js Pages API routes |
+| Database / Auth | Supabase (PostgreSQL + Auth) |
+| Deploy | Netlify (`@netlify/plugin-nextjs`) |
+| Legacy | Express/Mongo backend in `backend/` (deprecated, not used in production) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Browser --> Next[Next.js app]
+  Next --> API[Pages API routes]
+  API --> Supabase[(Supabase)]
+  Browser --> PWA[Service worker / manifest]
+```
+
+## Local development
 
 ```bash
-cd frontend
-npm install
+git clone https://github.com/Elli2022/recipe-book-platform.git
+cd recipe-book-platform/frontend
 cp .env.example .env.local
-# Fyll i NEXT_PUBLIC_SUPABASE_* och SUPABASE_SERVICE_ROLE_KEY (se supabase/README.md)
-npm run lint
-npm run build
+npm install
 npm run dev
 ```
 
-Öppna [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000
 
-## Migrera gamla recept (Mongo → Supabase)
+### Environment variables
 
-```bash
-cd frontend
-LEGACY_RECIPES_URL=http://localhost:3001/recipes npm run migrate:recipes
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes (API routes) | Server-side admin key — never expose to client |
 
-Alternativt:
+See `supabase/README.md` for schema migrations and auth redirect setup.
 
-```bash
-BACKEND_URL=https://din-gamla-backend.example.com npm run migrate:recipes
-```
-
-Verifiera:
+### Scripts
 
 ```bash
-npm run verify:supabase
+npm run dev      # local development
+npm run build    # production build
+npm run lint     # ESLint
+npm run screenshots  # capture README screenshots (Playwright)
 ```
 
-## Netlify
+## Project structure
 
-`netlify.toml`: base `frontend`, build `npm run build`, publicera `.next`, Node 22.
+```text
+frontend/          # Next.js application (active)
+  src/app/         # App Router (home, shared components)
+  src/pages/       # Pages Router (library, auth, API)
+  src/lib/         # Supabase client, recipe helpers
+supabase/          # SQL migrations and docs
+backend/           # Deprecated Express/Mongo prototype
+```
 
-Lägg samma Supabase‑variabler som lokalt under **Site settings → Environment variables**.  
-Exponera **inte** `SUPABASE_SERVICE_ROLE_KEY` som `NEXT_PUBLIC_*`.
+## For reviewers / interviews
 
-## Mobile app mode
+1. **Full-stack scope:** Auth, CRUD recipes, favorites, and deployable production config — not just a static recipe list.
+2. **Pragmatic migration:** App Router for marketing home while library/API remain on Pages Router during incremental migration.
+3. **Offline-friendly touches:** Local recipe cache + PWA for mobile use cases.
+4. **Tradeoff:** Deprecated Mongo backend kept for history; production path is Supabase-only.
 
-Efter deploy: öppna sajten i Safari på iPhone/iPad → Dela → **Lägg till på hemskärmen**.
+## License
 
-## API (Next.js)
-
-| Metod | Route | Beskrivning |
-|--------|--------|-------------|
-| GET / POST | `/api/recipes` | Lista publika / skapa (inloggning) |
-| GET / PUT / DELETE | `/api/recipes/[id]` | Ett recept |
-| GET / POST | `/api/favorites` | Favorit‑id / spara |
-| DELETE | `/api/favorites/[id]` | Ta bort favorit |
-| POST | `/api/auth/login` | Inloggning (cookies) |
-| POST | `/api/users` | Registrering |
-
-## Mappen `backend/`
-
-Express + MongoDB + S3 är **inaktuellt** för detta flöde; källan för recept/auth är Supabase.
-
-## Versioner, CI och övrigt
-
-- SemVer och releaser: `CHANGELOG.md`, `RELEASING.md`
-- CI: GitHub Actions — frontend `lint` + `build`
-- **Licens:** `LICENSE` (ISC)
-- **Säkerhet:** `SECURITY.md`
+ISC

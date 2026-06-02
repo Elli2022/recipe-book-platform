@@ -163,9 +163,21 @@ const Home = () => {
           </div>
 
           {isLoading ? (
-            <p className="rounded-lg border border-stone-200 bg-white p-6 text-stone-700">
-              Laddar recept...
-            </p>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {[0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
+                >
+                  <div className="h-56 animate-pulse bg-stone-200" />
+                  <div className="space-y-3 p-5">
+                    <div className="h-3 w-24 animate-pulse rounded bg-stone-200" />
+                    <div className="h-6 w-3/4 animate-pulse rounded bg-stone-200" />
+                    <div className="h-4 w-full animate-pulse rounded bg-stone-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : featuredRecipes.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {featuredRecipes.map((recipe) => (

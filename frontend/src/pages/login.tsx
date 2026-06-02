@@ -1,28 +1,28 @@
 import React, { useState } from "react";
+import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import AuthShell from "@/app/components/AuthShell";
 import { useRouter } from "next/router";
 import { notifyAuthChange } from "@/lib/auth/local-user";
 
+const inputClassName =
+  "rounded-md border border-stone-300 bg-white px-4 py-3 text-stone-950 outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-100";
+
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const nextPath =
+    typeof router.query.next === "string" ? router.query.next : "/recept";
 
-  const { email, password } = formData;
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [event.target.name]: event.target.value });
   };
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
     setError(null);
 
@@ -30,10 +30,8 @@ const Login = () => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
       const data = await res.json();
 
@@ -43,11 +41,11 @@ const Login = () => {
 
       localStorage.setItem("receptbok.user", JSON.stringify(data.user));
       notifyAuthChange();
-      router.push("/recept");
-    } catch (error) {
+      router.push(nextPath);
+    } catch (submitError) {
       setError(
-        error instanceof Error
-          ? error.message
+        submitError instanceof Error
+          ? submitError.message
           : "Inloggningen misslyckades. Kontrollera dina uppgifter."
       );
     } finally {
@@ -56,43 +54,63 @@ const Login = () => {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center mb-8">Logga in</h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        <form onSubmit={(e) => onSubmit(e)}>
-          <div className="mb-4">
-            <label className="block text-gray-700">E-post</label>
+      <AuthShell
+        eyebrow="Välkommen tillbaka"
+        title="Logga in"
+        intro="Logga in för att spara favoriter och synka recept mellan enheter."
+      >
+        {error && (
+          <p className="mt-5 rounded-md bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={onSubmit} className="mt-6 grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-stone-700">
+            E-post
             <input
               type="email"
               name="email"
-              value={email}
-              onChange={(e) => onChange(e)}
+              value={formData.email}
+              onChange={onChange}
               required
-              className="mt-1 p-2 w-full border rounded text-black placeholder-gray-500"
+              autoComplete="email"
+              className={inputClassName}
             />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700">Lösenord</label>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-stone-700">
+            Lösenord
             <input
               type="password"
               name="password"
-              value={password}
-              onChange={(e) => onChange(e)}
+              value={formData.password}
+              onChange={onChange}
               required
-              className="mt-1 p-2 w-full border rounded text-black placeholder-gray-500"
+              autoComplete="current-password"
+              className={inputClassName}
             />
-          </div>
+          </label>
           <button
             type="submit"
             disabled={loading}
-            className={`bg-blue-500 text-white p-2 rounded w-full ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-emerald-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Loggar in..." : "Logga in"}
           </button>
         </form>
-      </div>
+
+        <p className="mt-6 text-sm text-stone-600">
+          Inget konto?{" "}
+          <Link
+            href={`/register?next=${encodeURIComponent(nextPath)}`}
+            className="font-semibold text-emerald-700"
+          >
+            Skapa konto
+          </Link>
+        </p>
+      </AuthShell>
       <Footer />
     </div>
   );
