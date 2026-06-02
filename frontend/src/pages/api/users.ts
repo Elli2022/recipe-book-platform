@@ -1,14 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  getSupabasePublicKey,
+  getSupabaseUrl,
+  hasSupabasePublicConfig,
+} from "@/lib/supabase/env";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anon) {
+  if (!hasSupabasePublicConfig()) {
     return res.status(503).json({ msg: "Supabase är inte konfigurerad." });
   }
+
+  const url = getSupabaseUrl();
+  const anon = getSupabasePublicKey();
 
   if (req.method === "GET") {
     return res.status(200).json([]);

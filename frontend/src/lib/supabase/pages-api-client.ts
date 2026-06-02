@@ -5,6 +5,7 @@ import {
   type CookieOptions,
 } from "@supabase/ssr";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getSupabasePublicKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 /**
  * Supabase client bound to the Pages API request/response (session cookies).
@@ -13,11 +14,13 @@ export function createSupabasePagesApiClient(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = getSupabaseUrl();
+  const anon = getSupabasePublicKey();
 
   if (!url || !anon) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or Supabase public key (anon/publishable)."
+    );
   }
 
   return createServerClient(url, anon, {
