@@ -36,14 +36,16 @@ Det skapar bland annat `recipes`, `profiles`, `favorite_recipes`, trigger för n
 
 I Supabase: **Authentication → URL Configuration**
 
-- **Site URL:** din produktions‑URL (t.ex. `https://ellisreceptbok.netlify.app`).
+- **Site URL:** din produktions‑URL (t.ex. `https://recipe-book-platform.netlify.app`).
 - **Redirect URLs**, lägg bl.a. till:
 
 ```text
-https://ellisreceptbok.netlify.app/**
-https://**--ellisreceptbok.netlify.app/**
+https://recipe-book-platform.netlify.app/**
+https://**--recipe-book-platform.netlify.app/**
 http://localhost:3000/**
 ```
+
+För lösenordsåterställning måste `/auth/reset-password` ligga inom tillåtna redirect-URL:er (wildcard ovan räcker).
 
 ## 5. Bilder
 

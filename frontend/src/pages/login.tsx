@@ -6,8 +6,7 @@ import AuthShell from "@/app/components/AuthShell";
 import { useRouter } from "next/router";
 import { notifyAuthChange } from "@/lib/auth/local-user";
 
-const inputClassName =
-  "rounded-md border border-stone-300 bg-white px-4 py-3 text-stone-950 outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-100";
+import { authButtonClassName, authInputClassName } from "@/lib/auth/input-styles";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -16,6 +15,7 @@ const Login = () => {
   const router = useRouter();
   const nextPath =
     typeof router.query.next === "string" ? router.query.next : "/recept";
+  const resetSuccess = router.query.reset === "1";
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [event.target.name]: event.target.value });
@@ -61,6 +61,11 @@ const Login = () => {
         title="Logga in"
         intro="Logga in för att spara favoriter och synka recept mellan enheter."
       >
+        {resetSuccess && (
+          <p className="mt-5 rounded-md bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+            Lösenordet är uppdaterat. Logga in med ditt nya lösenord.
+          </p>
+        )}
         {error && (
           <p className="mt-5 rounded-md bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
             {error}
@@ -77,7 +82,7 @@ const Login = () => {
               onChange={onChange}
               required
               autoComplete="email"
-              className={inputClassName}
+              className={authInputClassName}
             />
           </label>
           <label className="grid gap-2 text-sm font-medium text-stone-700">
@@ -89,13 +94,18 @@ const Login = () => {
               onChange={onChange}
               required
               autoComplete="current-password"
-              className={inputClassName}
+              className={authInputClassName}
             />
           </label>
+          <p className="text-right text-sm">
+            <Link href="/forgot-password" className="font-semibold text-emerald-700">
+              Glömt lösenord?
+            </Link>
+          </p>
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-emerald-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className={authButtonClassName}
           >
             {loading ? "Loggar in..." : "Logga in"}
           </button>
