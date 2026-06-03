@@ -6,6 +6,7 @@
 [build.environment]
   NODE_VERSION = "22"
   NETLIFY_NEXT_SKEW_PROTECTION = "true"
+  NEXT_PUBLIC_SITE_URL = "https://recipe-book-platform.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

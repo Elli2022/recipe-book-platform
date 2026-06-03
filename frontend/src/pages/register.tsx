@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import { getAuthRedirectOrigin } from "@/lib/auth/site-url";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 const Register = () => {
@@ -29,9 +30,8 @@ const Register = () => {
     setMessage(null);
 
     try {
-      const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-        nextPath
-      )}`;
+      const origin = getAuthRedirectOrigin(window.location.origin);
+      const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 
       const { data, error } = await getSupabaseBrowserClient().auth.signUp({
         email: formData.email,

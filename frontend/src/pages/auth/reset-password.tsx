@@ -17,36 +17,82 @@ const ResetPasswordPage = () => {
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
-    if (!supabaseConfigured) {
+    if (!supabaseConfigured || !router.isReady) {
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
 
-    const openFromHash = async () => {
+    const finishWithSession = () => {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setModalOpen(true);
+      setError(null);
+      setReady(true);
+    };
+
+    const fail = (message: string) => {
+      setError(message);
+      setReady(true);
+    };
+
+    const openFromLink = async () => {
       const hash = window.location.hash.startsWith("#")
         ? window.location.hash.slice(1)
         : "";
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get("access_token");
-      const refreshToken = params.get("refresh_token");
-      const type = params.get("type");
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const hashType = hashParams.get("type");
 
-      if (type === "recovery" && accessToken && refreshToken) {
+      if (hashType === "recovery" && accessToken && refreshToken) {
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
 
         if (sessionError) {
-          setError(sessionError.message);
-          setReady(true);
+          fail(sessionError.message);
           return;
         }
 
-        window.history.replaceState({}, document.title, window.location.pathname);
-        setModalOpen(true);
-        setReady(true);
+        finishWithSession();
+        return;
+      }
+
+      const code =
+        typeof router.query.code === "string" ? router.query.code : null;
+      if (code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+
+        if (exchangeError) {
+          fail(exchangeError.message);
+          return;
+        }
+
+        finishWithSession();
+        return;
+      }
+
+      const tokenHash =
+        typeof router.query.token_hash === "string"
+          ? router.query.token_hash
+          : null;
+      const queryType =
+        typeof router.query.type === "string" ? router.query.type : null;
+
+      if (tokenHash && queryType === "recovery") {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+
+        if (verifyError) {
+          fail(verifyError.message);
+          return;
+        }
+
+        finishWithSession();
         return;
       }
 
@@ -70,12 +116,12 @@ const ResetPasswordPage = () => {
       }
     });
 
-    void openFromHash();
+    void openFromLink();
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabaseConfigured]);
+  }, [supabaseConfigured, router.isReady, router.query.code, router.query.token_hash, router.query.type]);
 
   const onSuccess = async () => {
     setCompleted(true);

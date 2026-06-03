@@ -47,6 +47,8 @@ http://localhost:3000/**
 
 För lösenordsåterställning måste `/auth/reset-password` ligga inom tillåtna redirect-URL:er (wildcard ovan räcker).
 
+Om mejllänken ger **Netlify "Site not found"**, se `docs/PASSWORD_RESET.md` — nästan alltid fel **Site URL** (t.ex. kvar på `localhost`) eller saknad redirect-URL.
+
 ## 5. Bilder
 
 Recept kan använda URL eller data‑URL i `image`. För Storage och signerade URL:er senare, se [Storage docs](https://supabase.com/docs/guides/storage).

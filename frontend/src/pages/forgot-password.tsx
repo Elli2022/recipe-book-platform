@@ -3,6 +3,7 @@ import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import AuthShell from "@/app/components/AuthShell";
+import { getPasswordResetRedirectUrl } from "@/lib/auth/site-url";
 import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabaseClient";
 import { authButtonClassName, authInputClassName } from "@/lib/auth/input-styles";
 
@@ -25,7 +26,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const redirectTo = `${window.location.origin}/auth/reset-password`;
+      const redirectTo = getPasswordResetRedirectUrl(window.location.origin);
       const { error: resetError } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(
         email.trim(),
         { redirectTo }
