@@ -2,9 +2,34 @@ import type { Metadata, Viewport } from "next";
 import PwaRegistrar from "./components/PwaRegistrar";
 import "./globals.css";
 
+const siteUrl = "https://recipe-book-platform.netlify.app";
+
 export const metadata: Metadata = {
-  title: "Receptbok",
-  description: "En personlig receptbok för att hitta, spara och laga favoritrecept.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Receptbok",
+    template: "%s | Receptbok",
+  },
+  description:
+    "En personlig receptbok för att hitta, spara och laga favoritrecept — med sök, kategorier, favoriter och PWA.",
+  keywords: ["recept", "matlagning", "receptbok", "favoriter", "PWA"],
+  authors: [{ name: "Eleonora Nocentini" }],
+  openGraph: {
+    type: "website",
+    locale: "sv_SE",
+    url: siteUrl,
+    siteName: "Receptbok",
+    title: "Receptbok — din personliga receptapp",
+    description:
+      "Sök recept, spara favoriter och bygg din egen kokbok. Byggd med Next.js och Supabase.",
+    images: [{ url: "/images/heroImageLandingPage.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Receptbok",
+    description: "Din personliga receptapp med favoriter och PWA.",
+    images: ["/images/heroImageLandingPage.jpg"],
+  },
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icons/icon.svg",

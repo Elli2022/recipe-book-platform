@@ -2,9 +2,9 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import RecipeImage from "@/app/components/RecipeImage";
 import {
   Recipe,
-  getLocalRecipes,
   mergeRecipes,
   normalizeRecipe,
   recipeImage,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import { useLocalRecipes } from "@/lib/use-local-recipes";
 import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 
 type Props = {
@@ -34,13 +35,9 @@ export async function getServerSideProps() {
 }
 
 const SparadePage = ({ recipes }: Props) => {
-  const [localRecipes, setLocalRecipesState] = useState<Recipe[]>([]);
+  const localRecipes = useLocalRecipes();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const isLoggedIn = useLoggedIn();
-
-  React.useEffect(() => {
-    setLocalRecipesState(getLocalRecipes());
-  }, []);
 
   React.useEffect(() => {
     if (!isLoggedIn) {
@@ -97,10 +94,9 @@ const SparadePage = ({ recipes }: Props) => {
     if (!isLoggedIn) {
       return;
     }
-    const localCopy = saveLocalRecipeCopy(recipe, {
+    saveLocalRecipeCopy(recipe, {
       ownerUserId: getStoredUser()?.id,
     });
-    setLocalRecipesState((current) => [localCopy, ...current]);
   };
 
   return (
@@ -142,14 +138,7 @@ const SparadePage = ({ recipes }: Props) => {
                 className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <Link href={`/recept/${recipe._id}`} className="block">
-                  <img
-                    src={recipeImage(recipe)}
-                    alt={recipe.name}
-                    className="h-56 w-full object-cover"
-                    onError={(event) => {
-                      event.currentTarget.src = "/images/heroImageLandingPage.jpg";
-                    }}
-                  />
+                  <RecipeImage src={recipeImage(recipe)} alt={recipe.name} />
                   <div className="p-5">
                     <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                       <span>{recipe.category || "Okategoriserat"}</span>

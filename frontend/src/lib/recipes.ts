@@ -101,6 +101,9 @@ export const getLocalRecipes = (): Recipe[] => {
 
 export const setLocalRecipes = (recipes: Recipe[]) => {
   window.localStorage.setItem(LOCAL_RECIPES_KEY, JSON.stringify(recipes));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("receptbok:local-recipes-change"));
+  }
 };
 
 export const saveLocalRecipe = (draft: RecipeDraft): Recipe => {

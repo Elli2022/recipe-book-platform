@@ -22,9 +22,7 @@ const Navbar = () => {
     };
   }, []);
 
-  React.useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+  const closeMenu = () => setMenuOpen(false);
 
   const onLogout = () => {
     window.localStorage.removeItem("receptbok.user");
@@ -56,7 +54,11 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="text-lg font-bold tracking-tight text-stone-950">
+        <Link
+          href="/"
+          onClick={closeMenu}
+          className="text-lg font-bold tracking-tight text-stone-950"
+        >
           Receptbok
         </Link>
 
@@ -75,12 +77,18 @@ const Navbar = () => {
           className={`${menuOpen ? "flex" : "hidden"} absolute left-0 right-0 top-full flex-col gap-2 border-b border-stone-200 bg-white px-4 py-4 shadow-sm md:static md:flex md:flex-row md:items-center md:justify-end md:border-0 md:bg-transparent md:p-0 md:shadow-none`}
         >
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+            <Link
+              key={link.href}
+              href={link.href}
+              className={linkClass(link.href)}
+              onClick={closeMenu}
+            >
               {link.label}
             </Link>
           ))}
           <Link
             href="/recept#nytt-recept"
+            onClick={closeMenu}
             className="rounded-full bg-emerald-700 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
           >
             Nytt recept
@@ -96,6 +104,7 @@ const Navbar = () => {
           ) : (
             <Link
               href="/login"
+              onClick={closeMenu}
               className="rounded-full border border-stone-300 px-3 py-2 text-center text-sm font-medium text-stone-700 transition hover:bg-stone-100 hover:text-stone-950"
             >
               Logga in

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import RecipeImage from "@/app/components/RecipeImage";
 import {
   Recipe,
   getLocalRecipes,
@@ -286,13 +287,10 @@ const ReceptDetalj = () => {
 
         <section className="mt-5 grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-start">
           <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-            <img
+            <RecipeImage
               src={recipeImage(recipe)}
               alt={recipe.name}
               className="h-[420px] w-full object-cover"
-              onError={(event) => {
-                event.currentTarget.src = "/images/heroImageLandingPage.jpg";
-              }}
             />
           </div>
 

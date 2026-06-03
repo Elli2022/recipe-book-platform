@@ -10,6 +10,12 @@ Full-stack recipe collection app: browse and search recipes, save favorites, and
 
 **Live demo:** [recipe-book-platform.netlify.app](https://recipe-book-platform.netlify.app)
 
+## Status
+
+- **CI:** lint + build (Node 22) — green after React 19 ESLint fixes and `useLocalRecipes` hydration hook
+- **Deploy:** [recipe-book-platform.netlify.app](https://recipe-book-platform.netlify.app) via Netlify
+- **SEO:** Open Graph metadata, `sitemap.xml`, `robots.txt`, custom 404
+
 ## Highlights
 
 - **Recipe library** with search, categories, and detail pages

@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
+import RecipeImage from "./components/RecipeImage";
 import Footer from "./components/Footer";
 import {
   Recipe,
-  getLocalRecipes,
   mergeRecipes,
   normalizeRecipe,
   recipeImage,
 } from "@/lib/recipes";
+import { useLocalRecipes } from "@/lib/use-local-recipes";
 
 const REMOTE_CACHE_KEY = "receptbok.remoteRecipesCache.v1";
 
@@ -30,12 +32,8 @@ const getCachedRemoteRecipes = (): Recipe[] => {
 
 const Home = () => {
   const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>([]);
-  const [localRecipes, setLocalRecipes] = useState<Recipe[]>([]);
+  const localRecipes = useLocalRecipes();
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setLocalRecipes(getLocalRecipes());
-  }, []);
 
   useEffect(() => {
     const cachedRecipes = getCachedRemoteRecipes();
@@ -94,10 +92,13 @@ const Home = () => {
 
       <main>
         <section className="relative min-h-[calc(100vh-72px)] overflow-hidden">
-          <img
+          <Image
             src="/images/heroImageLandingPage.jpg"
             alt="Hemlagad mat på bordet"
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-stone-950/45" />
           <div className="relative z-10 mx-auto flex min-h-[calc(100vh-72px)] max-w-6xl flex-col justify-center px-4 py-16 text-white">
@@ -186,14 +187,7 @@ const Home = () => {
                   href={`/recept/${recipe._id}`}
                   className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <img
-                    className="h-56 w-full object-cover"
-                    src={recipeImage(recipe)}
-                    alt={recipe.name}
-                    onError={(event) => {
-                      event.currentTarget.src = "/images/heroImageLandingPage.jpg";
-                    }}
-                  />
+                  <RecipeImage src={recipeImage(recipe)} alt={recipe.name} />
                   <div className="p-5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
                       {recipe.category || "Okategoriserat"}

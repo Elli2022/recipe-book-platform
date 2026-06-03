@@ -8,15 +8,16 @@ import { getSupabaseBrowserClient, hasSupabaseConfig } from "@/lib/supabaseClien
 
 const ResetPasswordPage = () => {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const supabaseConfigured = hasSupabaseConfig();
+  const [ready, setReady] = useState(!supabaseConfigured);
   const [modalOpen, setModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    supabaseConfigured ? null : "Supabase Auth är inte konfigurerad."
+  );
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
-    if (!hasSupabaseConfig()) {
-      setError("Supabase Auth är inte konfigurerad.");
-      setReady(true);
+    if (!supabaseConfigured) {
       return;
     }
 
@@ -74,7 +75,7 @@ const ResetPasswordPage = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabaseConfigured]);
 
   const onSuccess = async () => {
     setCompleted(true);

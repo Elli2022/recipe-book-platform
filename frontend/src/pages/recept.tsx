@@ -3,10 +3,11 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import RecipeImage from "@/app/components/RecipeImage";
+import Image from "next/image";
 import {
   Recipe,
   RecipeDraft,
-  getLocalRecipes,
   mergeRecipes,
   normalizeRecipe,
   recipeImage,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import { useLocalRecipes } from "@/lib/use-local-recipes";
 import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 
 type Props = {
@@ -51,8 +53,7 @@ export async function getServerSideProps() {
 const ReceptPage = ({ recipes }: Props) => {
   const router = useRouter();
   const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>(recipes);
-  /** Tom vid SSR/hydration — annars mismatch mot localStorage. */
-  const [localRecipes, setLocalRecipesState] = useState<Recipe[]>([]);
+  const localRecipes = useLocalRecipes();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Alla");
@@ -68,10 +69,6 @@ const ReceptPage = ({ recipes }: Props) => {
       credentials: "include",
     });
   };
-
-  useEffect(() => {
-    setLocalRecipesState(getLocalRecipes());
-  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -186,13 +183,11 @@ const ReceptPage = ({ recipes }: Props) => {
         }
       }
 
-      const localRecipe = saveLocalRecipe(draft);
-      setLocalRecipesState((current) => [localRecipe, ...current]);
+      saveLocalRecipe(draft);
       setFormStatus("Receptet sparades på den här enheten.");
       resetDraft();
     } catch {
-      const localRecipe = saveLocalRecipe(draft);
-      setLocalRecipesState((current) => [localRecipe, ...current]);
+      saveLocalRecipe(draft);
       setFormStatus("Receptet sparades på den här enheten.");
       resetDraft();
     } finally {
@@ -283,9 +278,11 @@ const ReceptPage = ({ recipes }: Props) => {
             </p>
           </div>
           <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
-            <img
+            <Image
               src="/images/heroImageLandingPage.jpg"
               alt="Mat på ett dukat bord"
+              width={1200}
+              height={640}
               className="h-80 w-full object-cover"
             />
           </div>
@@ -345,14 +342,7 @@ const ReceptPage = ({ recipes }: Props) => {
               onFocusCapture={() => prefetchRecipeDetail(recipe._id)}
             >
               <Link href={`/recept/${recipe._id}`} className="block">
-                <img
-                  src={recipeImage(recipe)}
-                  alt={recipe.name}
-                  className="h-56 w-full object-cover"
-                  onError={(event) => {
-                    event.currentTarget.src = "/images/heroImageLandingPage.jpg";
-                  }}
-                />
+                <RecipeImage src={recipeImage(recipe)} alt={recipe.name} />
                 <div className="p-5">
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                     <span>{recipe.category || "Okategoriserat"}</span>
@@ -538,7 +528,7 @@ const ReceptPage = ({ recipes }: Props) => {
             </div>
 
             {draft.imageDataUrl && (
-              <img
+              <RecipeImage
                 src={draft.imageDataUrl}
                 alt="Förhandsvisning"
                 className="h-44 w-full rounded-md object-cover sm:w-80"
