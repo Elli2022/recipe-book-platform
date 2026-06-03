@@ -16,6 +16,7 @@ import {
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 
 type Props = {
   recipes: Recipe[];
@@ -32,19 +33,12 @@ const emptyDraft: RecipeDraft = {
   imageDataUrl: "",
 };
 
-const getBaseUrl = (req: any) => {
-  const protocol = req.headers["x-forwarded-proto"] || "http";
-  return `${protocol}://${req.headers.host}`;
-};
-
-export async function getServerSideProps({ req }: { req: any }) {
+export async function getServerSideProps() {
   try {
-    const response = await fetch(`${getBaseUrl(req)}/api/recipes`);
-    const data = await response.json();
-
+    const recipes = await listRecipesForServer();
     return {
       props: {
-        recipes: Array.isArray(data) ? data.map(normalizeRecipe) : [],
+        recipes: recipes.map(normalizeRecipe),
       },
     };
   } catch {

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabasePagesApiClient } from "@/lib/supabase/pages-api-client";
+import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 import {
   normalizeRecipePayload,
   recipeRowToClient,
@@ -22,26 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.method === "GET") {
-      // Lightweight list payload for fast page loads.
-      // Large base64 images are intentionally excluded from list responses.
-      const { data, error } = await supabase
-        .from("recipes")
-        .select(
-          "id,name,description,portions,category,ingredients,instructions,created_at"
-        )
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        return res.status(500).json({ message: error.message });
-      }
-
-      const rows = ((data ?? []) as Partial<RecipeRow>[]).map((row) => ({
-        ...row,
-        image: "",
-        source_image: "",
-      })) as RecipeRow[];
-
-      return res.status(200).json(rows.map(recipeRowToClient));
+      return res.status(200).json(await listRecipesForServer());
     }
 
     if (req.method === "POST") {
