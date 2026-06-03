@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { AUTH_CHANGE_EVENT, getStoredUser, notifyAuthChange } from "@/lib/auth/local-user";
+import { useActivePathname } from "@/lib/use-active-pathname";
 
 const Navbar = () => {
-  const pathname = usePathname() ?? "/";
+  const pathname = useActivePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 

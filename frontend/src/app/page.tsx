@@ -8,11 +8,9 @@ import RecipeImage from "./components/RecipeImage";
 import Footer from "./components/Footer";
 import {
   Recipe,
-  mergeRecipes,
   normalizeRecipe,
   recipeImage,
 } from "@/lib/recipes";
-import { useLocalRecipes } from "@/lib/use-local-recipes";
 
 const REMOTE_CACHE_KEY = "receptbok.remoteRecipesCache.v1";
 
@@ -32,7 +30,6 @@ const getCachedRemoteRecipes = (): Recipe[] => {
 
 const Home = () => {
   const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>([]);
-  const localRecipes = useLocalRecipes();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,10 +73,7 @@ const Home = () => {
     };
   }, []);
 
-  const recipes = useMemo(
-    () => mergeRecipes(localRecipes, remoteRecipes),
-    [localRecipes, remoteRecipes]
-  );
+  const recipes = remoteRecipes;
 
   const featuredRecipes = recipes.slice(0, 3);
   const categories = Array.from(

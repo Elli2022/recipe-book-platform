@@ -1,8 +1,15 @@
-import React from "react";
-import Navbar from "@/app/components/Navbar";
-import Footer from "@/app/components/Footer";
+import type { Metadata } from "next";
+import Link from "next/link";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
-const AboutPage = () => {
+export const metadata: Metadata = {
+  title: "Om projektet",
+  description:
+    "Varför Receptbok skapades — gluten- och nötfria recept samlade med favoriter, kategorier och PWA.",
+};
+
+export default function AboutPage() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
@@ -42,11 +49,14 @@ const AboutPage = () => {
               </p>
             </div>
           </div>
+          <p className="mt-8 text-sm text-stone-600">
+            <Link href="/recept" className="font-semibold text-emerald-700">
+              Utforska receptbiblioteket
+            </Link>
+          </p>
         </section>
       </main>
       <Footer />
     </div>
   );
-};
-
-export default AboutPage;
+}

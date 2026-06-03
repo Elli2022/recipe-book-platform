@@ -84,7 +84,11 @@ npm run dev      # local development
 npm run build    # production build
 npm run lint     # ESLint
 npm run screenshots  # capture README screenshots (Playwright)
+npm run test:e2e     # smoke tests (starts production server)
+npm run storybook    # component library (Vite)
 ```
+
+Deploy env checklist: see `docs/NETLIFY_ENV.md` (requires `SUPABASE_SERVICE_ROLE_KEY` on Netlify).
 
 ## Project structure
 
