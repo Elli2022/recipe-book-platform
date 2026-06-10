@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,23 +16,13 @@ const localPath = join(
   "../../public/images/glutenfri-kladdkaka-maria.jpg"
 );
 
-/** Arlas JPEG inbäddat i recipes.image (data-URL) för Supabase. */
+export const MARIA_LIST_IMAGE_PATH = "/images/glutenfri-kladdkaka-maria.jpg";
+
+/** Lokal bild i public/images för Supabase recipes.image. */
 export function mariaImageForDatabase() {
   if (existsSync(localPath)) {
-    const base64 = readFileSync(localPath).toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    return MARIA_LIST_IMAGE_PATH;
   }
 
   return MARIA_ARLA_IMAGE_URL;
-}
-
-/** Lättviktig bildreferens för receptlistor (undviker MB base64 i list-API). */
-export function mariaImageForList(storedImage) {
-  if (!storedImage) {
-    return MARIA_ARLA_IMAGE_URL;
-  }
-  if (storedImage.startsWith("data:")) {
-    return MARIA_ARLA_IMAGE_URL;
-  }
-  return storedImage;
 }

@@ -6,7 +6,6 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   MARIA_ARLA_RECIPE_URL,
-  MARIA_RECIPE_ID,
   mariaImageForDatabase,
 } from "./lib/arla-maria-image.mjs";
 import { jasminaImageForDatabase } from "./lib/jasmina-image.mjs";
@@ -108,13 +107,7 @@ for (const recipe of recipes) {
       process.exit(1);
     }
 
-    const imageNote =
-      recipe.id === MARIA_RECIPE_ID
-        ? ` (Arla-bild i DB: ${recipe.image.startsWith("data:") ? "inbäddad JPEG" : recipe.image})`
-        : recipe.image.startsWith("data:")
-          ? " (foto inbäddat i DB)"
-          : "";
-    console.log(`Uppdaterade: ${recipe.name}${imageNote}`);
+    console.log(`Uppdaterade: ${recipe.name} (${recipe.image})`);
     continue;
   }
 
@@ -125,13 +118,7 @@ for (const recipe of recipes) {
     process.exit(1);
   }
 
-  const imageNote =
-    recipe.id === MARIA_RECIPE_ID
-      ? ` (Arla-bild i DB: ${recipe.image.startsWith("data:") ? "inbäddad JPEG" : recipe.image})`
-      : recipe.image.startsWith("data:")
-        ? " (foto inbäddat i DB)"
-        : "";
-  console.log(`Skapade: ${recipe.name}${imageNote}`);
+  console.log(`Skapade: ${recipe.name} (${recipe.image})`);
 }
 
 console.log("Klart — familjerecept finns i Supabase.");

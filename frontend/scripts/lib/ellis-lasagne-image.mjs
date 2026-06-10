@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,11 +12,10 @@ const preparedPath = join(
   "../../public/images/ellis-vegetariska-lasagne.jpg"
 );
 
-/** Ellis lasagne-bild inbäddad i recipes.image (data-URL) för Supabase. */
+/** Ellis lasagne-bild som lokal sökväg i recipes.image. */
 export function ellisLasagneImageForDatabase() {
   if (existsSync(preparedPath)) {
-    const base64 = readFileSync(preparedPath).toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    return ELLIS_LASAGNE_LIST_IMAGE_PATH;
   }
 
   return ELLIS_LASAGNE_LIST_IMAGE_PATH;

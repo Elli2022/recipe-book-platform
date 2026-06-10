@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,11 +11,10 @@ const preparedPath = join(
   "../../public/images/jasminas-halloumisallad.jpg"
 );
 
-/** Jasminas foto inbäddat i recipes.image (data-URL) för Supabase. */
+/** Jasminas foto som lokal sökväg i recipes.image. */
 export function jasminaImageForDatabase() {
   if (existsSync(preparedPath)) {
-    const base64 = readFileSync(preparedPath).toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
+    return JASMINA_LIST_IMAGE_PATH;
   }
 
   return JASMINA_LIST_IMAGE_PATH;
