@@ -6,8 +6,10 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   MARIA_ARLA_RECIPE_URL,
+  MARIA_RECIPE_ID,
   mariaImageForDatabase,
 } from "./lib/arla-maria-image.mjs";
+import { jasminaImageForDatabase } from "./lib/jasmina-image.mjs";
 
 const recipes = [
   {
@@ -64,7 +66,7 @@ const recipes = [
       "Skär melonen i lagom stora bitar.",
       "Blanda ruccola, melon och tomater på ett fat. Toppa med halloumi och servera direkt.",
     ],
-    image: "/images/jasminas-halloumisallad.jpg",
+    image: jasminaImageForDatabase(),
     source_image: "Familjerecept",
   },
 ];
@@ -107,9 +109,11 @@ for (const recipe of recipes) {
     }
 
     const imageNote =
-      recipe.id === "f3051ec7-e4bc-4824-bad3-57f7941dabb0"
+      recipe.id === MARIA_RECIPE_ID
         ? ` (Arla-bild i DB: ${recipe.image.startsWith("data:") ? "inbäddad JPEG" : recipe.image})`
-        : "";
+        : recipe.image.startsWith("data:")
+          ? " (foto inbäddat i DB)"
+          : "";
     console.log(`Uppdaterade: ${recipe.name}${imageNote}`);
     continue;
   }
@@ -122,9 +126,11 @@ for (const recipe of recipes) {
   }
 
   const imageNote =
-    recipe.id === "f3051ec7-e4bc-4824-bad3-57f7941dabb0"
+    recipe.id === MARIA_RECIPE_ID
       ? ` (Arla-bild i DB: ${recipe.image.startsWith("data:") ? "inbäddad JPEG" : recipe.image})`
-      : "";
+      : recipe.image.startsWith("data:")
+        ? " (foto inbäddat i DB)"
+        : "";
   console.log(`Skapade: ${recipe.name}${imageNote}`);
 }
 
