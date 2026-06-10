@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,18 +11,30 @@ export const MARIA_ARLA_RECIPE_URL =
 
 export const MARIA_RECIPE_ID = "f3051ec7-e4bc-4824-bad3-57f7941dabb0";
 
+export const MARIA_LIST_IMAGE_PATH = "/images/glutenfri-kladdkaka-maria.jpg";
+
 const localPath = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../public/images/glutenfri-kladdkaka-maria.jpg"
 );
 
-export const MARIA_LIST_IMAGE_PATH = "/images/glutenfri-kladdkaka-maria.jpg";
-
-/** Lokal bild i public/images för Supabase recipes.image. */
+/** Arlas JPEG inbäddat i recipes.image (fungerar utan ny Netlify-deploy). */
 export function mariaImageForDatabase() {
   if (existsSync(localPath)) {
-    return MARIA_LIST_IMAGE_PATH;
+    const base64 = readFileSync(localPath).toString("base64");
+    return `data:image/jpeg;base64,${base64}`;
   }
 
   return MARIA_ARLA_IMAGE_URL;
+}
+
+/** Lättviktig bildreferens för receptlistor (undviker MB base64 i list-API). */
+export function mariaImageForList(storedImage) {
+  if (!storedImage) {
+    return MARIA_ARLA_IMAGE_URL;
+  }
+  if (storedImage.startsWith("data:")) {
+    return MARIA_ARLA_IMAGE_URL;
+  }
+  return storedImage;
 }

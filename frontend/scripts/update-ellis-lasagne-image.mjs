@@ -25,6 +25,12 @@ const supabase = createClient(
 );
 
 const image = ellisLasagneImageForDatabase();
+if (!image.startsWith("data:")) {
+  console.error(
+    "Saknar bildfil: frontend/public/images/ellis-vegetariska-lasagne.jpg"
+  );
+  process.exit(1);
+}
 
 const { data, error } = await supabase
   .from("recipes")
