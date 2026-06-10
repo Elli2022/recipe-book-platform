@@ -349,6 +349,11 @@ const ReceptPage = ({ recipes }: Props) => {
                     {recipe.localOnly && <span>Lokalt</span>}
                   </div>
                   <h2 className="text-xl font-bold text-stone-950">{recipe.name}</h2>
+                  {recipe.ownerName && (
+                    <p className="mt-1 text-xs font-medium text-stone-500">
+                      Tipsat av {recipe.ownerName}
+                    </p>
+                  )}
                   {recipe.description && (
                     <p className="mt-2 line-clamp-3 text-sm leading-6 text-stone-600">
                       {recipe.description}

@@ -13,6 +13,7 @@ import {
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import { RecipeAttribution } from "@/lib/recipe-attribution";
 
 const ReceptDetalj = () => {
   const router = useRouter();
@@ -310,6 +311,12 @@ const ReceptDetalj = () => {
               {recipe.name}
             </h1>
 
+            <RecipeAttribution
+              ownerName={recipe.ownerName}
+              sourceImage={recipe.source_image}
+              className="mt-3"
+            />
+
             {recipe.description && (
               <p className="mt-4 text-lg leading-8 text-stone-700">
                 {recipe.description}
@@ -494,11 +501,6 @@ const ReceptDetalj = () => {
           </div>
         </section>
 
-        {recipe.source_image && (
-          <p className="mt-6 text-sm text-stone-500">
-            Bildkälla: {recipe.source_image}
-          </p>
-        )}
       </main>
 
       <Footer />

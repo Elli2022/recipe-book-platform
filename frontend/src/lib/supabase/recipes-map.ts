@@ -1,5 +1,6 @@
 export type RecipeRow = {
   id: string;
+  owner_name?: string | null;
   name: string;
   description: string | null;
   portions: string | null;
@@ -15,6 +16,7 @@ export function recipeRowToClient(row: RecipeRow) {
   return {
     _id: row.id,
     name: row.name,
+    ownerName: row.owner_name?.trim() || undefined,
     description: row.description ?? "",
     portions: row.portions ?? undefined,
     category: row.category ?? "Okategoriserat",

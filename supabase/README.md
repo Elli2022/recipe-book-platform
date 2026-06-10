@@ -60,3 +60,19 @@ cd frontend
 LEGACY_RECIPES_URL=http://localhost:3001/recipes npm run migrate:recipes
 npm run verify:supabase
 ```
+
+## 7. Familjefavoritrecept
+
+| Recept | Bild | Seed-SQL |
+|--------|------|----------|
+| Marias kladdkaka | Arlas JPEG **inbäddad i `recipes.image`** (via seed; källa: `public/images/glutenfri-kladdkaka-maria.jpg`) | `seeds/marias_glutenfri_kladdkaka.sql` (URL-fallback) |
+| Jasminas halloumisallad | `public/images/jasminas-halloumisallad.jpg` (från **din** foto: spara som `jasminas-halloumisallad-original.jpg`, kör `npm run prepare:jasmina-image`) | `seeds/jasminas_halloumisallad.sql` |
+
+**Script (service role i `frontend/.env.local`):**
+
+```bash
+cd frontend
+npm run seed:family-recipes
+```
+
+Det lägger in/uppdaterar båda recepten i Supabase.

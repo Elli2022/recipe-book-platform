@@ -1,6 +1,7 @@
 export type Recipe = {
   _id: string;
   name: string;
+  ownerName?: string;
   category?: string;
   portions?: number | string;
   description?: string;
@@ -45,6 +46,11 @@ const splitList = (value: unknown) => {
 export const normalizeRecipe = (recipe: any): Recipe => ({
   _id: String(recipe?._id ?? recipe?.id ?? `local-${Date.now()}`),
   name: String(recipe?.name ?? "Namnlöst recept"),
+  ownerName: recipe?.ownerName
+    ? String(recipe.ownerName)
+    : recipe?.owner_name
+      ? String(recipe.owner_name)
+      : undefined,
   category: recipe?.category ? String(recipe.category) : "Okategoriserat",
   portions: recipe?.portions ?? "",
   description: recipe?.description ? String(recipe.description) : "",
