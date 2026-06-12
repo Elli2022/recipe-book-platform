@@ -17,7 +17,7 @@ test.describe("Receptbok smoke", () => {
       timeout: 15_000,
     });
     await expect(
-      page.getByRole("heading", { name: /bläddra i samlingen/i })
+      page.getByRole("heading", { name: /din receptsamling/i })
     ).toBeVisible();
     await expect(page.getByPlaceholder(/sök recept/i)).toBeVisible();
     await expect(page.getByRole("button", { name: "Frukost" })).toBeVisible();
