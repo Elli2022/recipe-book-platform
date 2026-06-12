@@ -10,7 +10,11 @@ import {
   prefetchFavoriteIds,
 } from "@/lib/favorites-cache";
 import { peekRecipeList, prefetchRecipeList } from "@/lib/recipe-list-cache";
-import { useActivePathname } from "@/lib/use-active-pathname";
+import {
+  isNavLinkActive,
+  isPagesRouterPath,
+  useNavbarPathname,
+} from "@/lib/use-navbar-pathname";
 
 const NAV_LINKS = [
   { href: "/", label: "Hem" },
@@ -19,44 +23,49 @@ const NAV_LINKS = [
   { href: "/about", label: "Om" },
 ] as const;
 
-const PAGES_ROUTER_PREFIXES = ["/login", "/register", "/forgot-password", "/auth"] as const;
-
-function isPagesRouterPath(path: string) {
-  return PAGES_ROUTER_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
-  );
-}
-
 type NavbarLinkProps = {
   href: string;
   className: string;
   children: React.ReactNode;
   onNavigate?: () => void;
+  "aria-current"?: "page";
 };
 
 /** Pages Router → App Router: vanlig länk undviker dubbelklick i hybrid Next.js. */
-function NavbarLink({ href, className, children, onNavigate }: NavbarLinkProps) {
-  const pathname = useActivePathname();
+function NavbarLink({
+  href,
+  className,
+  children,
+  onNavigate,
+  "aria-current": ariaCurrent,
+}: NavbarLinkProps) {
+  const pathname = useNavbarPathname();
   const crossRouter =
     isPagesRouterPath(pathname) && !isPagesRouterPath(href.split("#")[0] ?? href);
 
   if (crossRouter) {
     return (
-      <a href={href} className={className} onClick={onNavigate}>
+      <a href={href} className={className} aria-current={ariaCurrent} onClick={onNavigate}>
         {children}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className} onClick={onNavigate} prefetch>
+    <Link
+      href={href}
+      className={className}
+      aria-current={ariaCurrent}
+      onClick={onNavigate}
+      prefetch
+    >
       {children}
     </Link>
   );
 }
 
 const Navbar = () => {
-  const pathname = useActivePathname();
+  const pathname = useNavbarPathname();
   const isLoggedIn = useLoggedIn();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -87,10 +96,7 @@ const Navbar = () => {
   };
 
   const linkClass = (href: string) => {
-    const active =
-      href === "/"
-        ? pathname === "/"
-        : pathname === href || pathname.startsWith(`${href}/`);
+    const active = isNavLinkActive(pathname, href);
     return [
       "rounded-full px-3 py-2 text-sm font-medium transition",
       active
@@ -128,6 +134,7 @@ const Navbar = () => {
               href={link.href}
               className={linkClass(link.href)}
               onNavigate={closeMenuAfterNavigate}
+              aria-current={isNavLinkActive(pathname, link.href) ? "page" : undefined}
             >
               {link.label}
             </NavbarLink>

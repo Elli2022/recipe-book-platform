@@ -38,6 +38,27 @@ test.describe("Receptbok smoke", () => {
     ).toBeVisible();
   });
 
+  test("navbar highlights the current page", async ({ page }) => {
+    const nav = page.getByRole("navigation");
+
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
+    await expect(nav.getByRole("link", { name: "Om" })).toHaveClass(/bg-rose-50/);
+    await expect(nav.getByRole("link", { name: "Recept" })).not.toHaveClass(
+      /bg-rose-50/
+    );
+
+    await page.goto("/sparade", { waitUntil: "domcontentloaded" });
+    await expect(nav.getByRole("link", { name: "Sparade" })).toHaveClass(
+      /bg-rose-50/
+    );
+
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(nav.getByRole("link", { name: "Hem" })).toHaveClass(/bg-rose-50/);
+    await expect(nav.getByRole("link", { name: "Recept" })).not.toHaveClass(
+      /bg-rose-50/
+    );
+  });
+
   test("navbar navigates in one click from login and recipe detail", async ({
     page,
   }) => {
