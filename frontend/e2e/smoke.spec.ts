@@ -37,4 +37,19 @@ test.describe("Receptbok smoke", () => {
       page.getByRole("heading", { name: /sidan hittades inte/i })
     ).toBeVisible();
   });
+
+  test("navbar navigates in one click from login and recipe detail", async ({
+    page,
+  }) => {
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+    await page.getByRole("navigation").getByRole("link", { name: "Recept" }).click();
+    await expect(page).toHaveURL(/\/recept\/?$/);
+    await expect(page.getByPlaceholder(/sök recept/i)).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
+    await page.getByRole("navigation").getByRole("link", { name: "Sparade" }).click();
+    await expect(page).toHaveURL(/\/sparade\/?$/);
+  });
 });
