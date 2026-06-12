@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Router from "next/router";
 import { useRouter } from "next/navigation";
 import { notifyAuthChange } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
@@ -25,7 +24,6 @@ const Navbar = () => {
   useEffect(() => {
     for (const link of NAV_LINKS) {
       router.prefetch(link.href);
-      void Router.prefetch(link.href);
     }
     prefetchRecipeList();
   }, [router]);
