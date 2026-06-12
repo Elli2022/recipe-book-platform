@@ -12,6 +12,7 @@ import RecipeListSkeleton from "@/app/components/RecipeListSkeleton";
 import {
   Recipe,
   RecipeDraft,
+  enrichRecipe,
   mergeRecipes,
   normalizeRecipe,
   saveLocalRecipe,
@@ -107,7 +108,7 @@ const ReceptClient = ({
   }, [isLoggedIn]);
 
   const allRecipes = useMemo(
-    () => mergeRecipes(localRecipes, remoteRecipes),
+    () => mergeRecipes(localRecipes, remoteRecipes).map(enrichRecipe),
     [localRecipes, remoteRecipes]
   );
 
@@ -117,6 +118,7 @@ const ReceptClient = ({
     dietFilter,
     sortBy,
     hasActiveSearch,
+    hasActiveBrowse,
     filteredRecipes,
     onSearchChange,
     setMealFilter,
@@ -311,6 +313,11 @@ const ReceptClient = ({
 
         {isLoadingRecipes ? (
           <RecipeListSkeleton />
+        ) : filteredRecipes.length === 0 && hasActiveBrowse ? (
+          <p className="mt-6 rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-10 text-center text-stone-600">
+            Inga recept matchar dina filter just nu. Prova att ta bort ett kost- eller
+            måltidsfilter.
+          </p>
         ) : (
           <section className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredRecipes.map((recipe) => (

@@ -69,30 +69,69 @@ export function recipeMatchesCategory(recipe: Recipe, category: string) {
   return parts.includes(selected) || parts.some((part) => part.includes(selected));
 }
 
+function recipeHaystack(recipe: Recipe): string {
+  return [
+    recipe.name,
+    recipe.category,
+    recipe.description,
+    recipe.mealType,
+    ...(recipe.tags ?? []),
+    recipe.ingredients.join(" "),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+export function inferDietTags(recipe: Recipe): DietTagId[] {
+  const haystack = recipeHaystack(recipe);
+  const tags = new Set<DietTagId>();
+
+  if (/\bvegan/i.test(haystack)) {
+    tags.add("veganskt");
+  }
+  if (/vegetar/i.test(haystack)) {
+    tags.add("vegetariskt");
+  }
+  if (/gluten/i.test(haystack)) {
+    tags.add("glutenfritt");
+  }
+  if (
+    (recipe.prepTimeMinutes ?? 999) <= 30 ||
+    /snabb|express|under\s*30|<\s*30\s*min/i.test(haystack)
+  ) {
+    tags.add("snabbt");
+  }
+
+  return [...tags];
+}
+
 export function recipeMatchesDiet(recipe: Recipe, dietFilter: DietTagId | null) {
   if (!dietFilter) {
     return true;
   }
 
   const tags = (recipe.tags ?? []).map((tag) => tag.toLowerCase());
-  const category = (recipe.category ?? "").toLowerCase();
-  const name = recipe.name.toLowerCase();
+  if (tags.includes(dietFilter)) {
+    return true;
+  }
+
+  const haystack = recipeHaystack(recipe);
 
   if (dietFilter === "vegetariskt") {
-    return (
-      tags.includes("vegetariskt") ||
-      category.includes("vegetar") ||
-      name.includes("vegetar")
-    );
+    return /vegetar/i.test(haystack);
   }
   if (dietFilter === "veganskt") {
-    return tags.includes("veganskt") || category.includes("vegan");
+    return /\bvegan/i.test(haystack);
   }
   if (dietFilter === "glutenfritt") {
-    return tags.includes("glutenfritt") || category.includes("gluten");
+    return /gluten/i.test(haystack);
   }
   if (dietFilter === "snabbt") {
-    return (recipe.prepTimeMinutes ?? 999) <= 30;
+    return (
+      (recipe.prepTimeMinutes ?? 999) <= 30 ||
+      /snabb|express|under\s*30|<\s*30\s*min/i.test(haystack)
+    );
   }
 
   return true;
@@ -104,13 +143,14 @@ export function recipeMatchesMeal(recipe: Recipe, mealFilter: MealTypeId) {
   }
 
   const inferred =
-    recipe.mealType ?? inferMealType(recipe.category, recipe.name);
+    recipe.mealType ??
+    inferMealType(recipe.category, recipe.name, recipe.description);
   if (inferred === mealFilter) {
     return true;
   }
 
   const keywords = MEAL_KEYWORDS[mealFilter];
-  const haystack = `${recipe.category ?? ""} ${recipe.name ?? ""}`.toLowerCase();
+  const haystack = recipeHaystack(recipe);
   return keywords.some((word) => haystack.includes(word));
 }
 
@@ -130,8 +170,12 @@ export function browseCategoriesFromRecipes(recipes: Recipe[]) {
   return ["Alla", ...Array.from(categories).sort((a, b) => a.localeCompare(b, "sv"))];
 }
 
-export function inferMealType(category?: string, name?: string): string | undefined {
-  const haystack = `${category ?? ""} ${name ?? ""}`.toLowerCase();
+export function inferMealType(
+  category?: string,
+  name?: string,
+  description?: string
+): string | undefined {
+  const haystack = `${category ?? ""} ${name ?? ""} ${description ?? ""}`.toLowerCase();
   for (const [meal, words] of Object.entries(MEAL_KEYWORDS) as [
     Exclude<MealTypeId, "alla">,
     string[],

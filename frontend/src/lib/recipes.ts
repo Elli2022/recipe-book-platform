@@ -1,4 +1,4 @@
-import { inferMealType } from "@/lib/recipe-taxonomy";
+import { inferDietTags, inferMealType } from "@/lib/recipe-taxonomy";
 import { EMBEDDED_RECIPE_IMAGE_BY_ID } from "@/lib/supabase/embedded-recipe-images";
 
 export type Recipe = {
@@ -109,11 +109,20 @@ export const recipeMatchesSearch = (recipe: Recipe, searchTerm: string) => {
   return words.every((word) => haystack.includes(word));
 };
 
-export const enrichRecipe = (recipe: Recipe): Recipe => ({
-  ...recipe,
-  mealType: recipe.mealType ?? inferMealType(recipe.category, recipe.name),
-  tags: recipe.tags ?? [],
-});
+export const enrichRecipe = (recipe: Recipe): Recipe => {
+  const mealType =
+    recipe.mealType ??
+    inferMealType(recipe.category, recipe.name, recipe.description);
+  const inferredTags = inferDietTags({ ...recipe, mealType });
+  const tags = [
+    ...new Set([
+      ...(recipe.tags ?? []).map((tag) => tag.toLowerCase()),
+      ...inferredTags,
+    ]),
+  ];
+
+  return { ...recipe, mealType, tags };
+};
 
 export const sortRecipes = (
   recipes: Recipe[],
