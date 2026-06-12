@@ -4,8 +4,10 @@ test.describe.configure({ mode: "serial" });
 
 test.describe("Receptbok smoke", () => {
   test("warmup: static routes load first", async ({ page }) => {
-    await page.goto("/about");
-    await expect(page.getByRole("heading", { name: /varför receptbok/i })).toBeVisible();
+    await page.goto("/about", { waitUntil: "load" });
+    await expect(page.getByRole("heading", { name: /varför receptbok/i })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.goto("/login");
     await expect(page.getByLabel(/e-post/i)).toBeVisible();
   });
