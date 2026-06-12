@@ -9,10 +9,11 @@ type RecipeCardProps = {
   recipe: Recipe;
   href: string;
   onPrefetch?: () => void;
+  onNavigate?: () => void;
   footer?: React.ReactNode;
 };
 
-const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
+const RecipeCard = ({ recipe, href, onPrefetch, onNavigate, footer }: RecipeCardProps) => {
   const timeLabel = formatPrepTime(recipe.prepTimeMinutes);
   const mealLabel = mealTypeLabel(recipe.mealType);
 
@@ -22,7 +23,11 @@ const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
       onMouseEnter={onPrefetch}
       onFocusCapture={onPrefetch}
     >
-      <Link href={href} className="flex flex-1 flex-col" onClick={onPrefetch}>
+      <Link
+        href={href}
+        className="flex flex-1 flex-col"
+        onClick={() => onNavigate?.()}
+      >
         <div className="relative aspect-[4/3] overflow-hidden">
           <RecipeImage
             src={recipeImage(recipe)}

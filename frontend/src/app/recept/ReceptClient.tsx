@@ -25,13 +25,18 @@ import {
   peekRecipeList,
   prependRecipeToList,
 } from "@/lib/recipe-list-cache";
-import { prefetchRecipeDetail } from "@/lib/recipe-prefetch";
+import {
+  prefetchRecipeDetailOnClick,
+  prefetchRecipeDetailOnHover,
+} from "@/lib/recipe-prefetch";
 import { useRecipeBrowseFilters } from "@/lib/use-recipe-browse-filters";
 import type { MealTypeId } from "@/lib/recipe-taxonomy";
 
 type ReceptClientProps = {
   initialSearch?: string;
   initialMeal?: MealTypeId;
+  /** Startsidan visar bara browse — formuläret finns på /recept. */
+  showCreateForm?: boolean;
 };
 
 const emptyDraft: RecipeDraft = {
@@ -48,6 +53,7 @@ const emptyDraft: RecipeDraft = {
 const ReceptClient = ({
   initialSearch = "",
   initialMeal = "alla",
+  showCreateForm = true,
 }: ReceptClientProps) => {
   const router = useRouter();
   const cached = peekRecipeList();
@@ -75,16 +81,24 @@ const ReceptClient = ({
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    void (async () => {
-      try {
-        const response = await fetch("/api/favorites", { credentials: "include" });
-        if (!response.ok) return;
-        const data = await response.json();
-        setFavoriteIds(Array.isArray(data.recipeIds) ? data.recipeIds : []);
-      } catch {
-        // lazy load ok
-      }
-    })();
+    const loadFavorites = () => {
+      void (async () => {
+        try {
+          const response = await fetch("/api/favorites", { credentials: "include" });
+          if (!response.ok) return;
+          const data = await response.json();
+          setFavoriteIds(Array.isArray(data.recipeIds) ? data.recipeIds : []);
+        } catch {
+          // lazy load ok
+        }
+      })();
+    };
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(loadFavorites, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(loadFavorites, 300);
+    return () => clearTimeout(timer);
   }, [isLoggedIn]);
 
   const allRecipes = useMemo(
@@ -297,7 +311,8 @@ const ReceptClient = ({
                 key={recipe._id}
                 recipe={recipe}
                 href={`/recept/${recipe._id}`}
-                onPrefetch={() => prefetchRecipeDetail(router, recipe)}
+                onPrefetch={() => prefetchRecipeDetailOnHover(router, recipe)}
+                onNavigate={() => prefetchRecipeDetailOnClick(router, recipe)}
                 footer={
                   <div className="flex items-center justify-between">
                     <button
@@ -347,6 +362,7 @@ const ReceptClient = ({
           </section>
         )}
 
+        {showCreateForm && (
         <section
           id="nytt-recept"
           className="mt-14 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8"
@@ -492,6 +508,7 @@ const ReceptClient = ({
             </div>
           </form>
         </section>
+        )}
       </RecipeBrowsePageLayout>
 
       <Footer />

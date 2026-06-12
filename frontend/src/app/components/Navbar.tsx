@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { notifyAuthChange } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
-import { prefetchRecipeList } from "@/lib/recipe-list-cache";
+import { peekRecipeList, prefetchRecipeList } from "@/lib/recipe-list-cache";
 import { useActivePathname } from "@/lib/use-active-pathname";
 
 const NAV_LINKS = [
@@ -25,7 +25,9 @@ const Navbar = () => {
     for (const link of NAV_LINKS) {
       router.prefetch(link.href);
     }
-    prefetchRecipeList();
+    if (!peekRecipeList()) {
+      prefetchRecipeList();
+    }
   }, [router]);
 
   const closeMenu = () => setMenuOpen(false);

@@ -1,7 +1,8 @@
-import { fetchRecipeBasic, stashRecipeDetail } from "@/lib/recipe-detail-cache";
+import { stashRecipeDetail } from "@/lib/recipe-detail-cache";
 import { recipeImage, type Recipe } from "@/lib/recipes";
 
 const preloadedImages = new Set<string>();
+const hoverTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export type PrefetchableRouter = {
   prefetch: (href: string) => void;
@@ -26,12 +27,44 @@ export function preloadRecipeImageUrl(url: string) {
   document.head.appendChild(link);
 }
 
-export function prefetchRecipeDetail(
+function runPrefetch(
   router: PrefetchableRouter | null | undefined,
   recipe: Recipe
 ) {
   stashRecipeDetail(recipe);
   router?.prefetch(`/recept/${recipe._id}`);
   preloadRecipeImageUrl(recipeImage(recipe));
-  void fetchRecipeBasic(recipe._id);
+}
+
+/** Väntar kort vid hover — undvik API-storm när musen glider över rutnätet. */
+export function prefetchRecipeDetailOnHover(
+  router: PrefetchableRouter | null | undefined,
+  recipe: Recipe
+) {
+  const id = recipe._id;
+  const existing = hoverTimers.get(id);
+  if (existing) {
+    clearTimeout(existing);
+  }
+
+  hoverTimers.set(
+    id,
+    setTimeout(() => {
+      hoverTimers.delete(id);
+      runPrefetch(router, recipe);
+    }, 150)
+  );
+}
+
+/** Direkt vid klick — ingen extra API-fetch, listdata räcker för första paint. */
+export function prefetchRecipeDetailOnClick(
+  router: PrefetchableRouter | null | undefined,
+  recipe: Recipe
+) {
+  const pending = hoverTimers.get(recipe._id);
+  if (pending) {
+    clearTimeout(pending);
+    hoverTimers.delete(recipe._id);
+  }
+  runPrefetch(router, recipe);
 }

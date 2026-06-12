@@ -86,12 +86,24 @@ const RecipeDetailClient = () => {
       }
     };
 
-    const showRecipe = (next: Recipe) => {
+    const showRecipe = (next: Recipe, options?: { skipInstructionFetch?: boolean }) => {
       setRecipe(next);
       setEditMode(false);
       setCheckedSteps({});
       setIsLoading(false);
       if (recipeNeedsMediaFetch(next)) void loadMedia();
+
+      if (
+        !options?.skipInstructionFetch &&
+        next.instructions.length === 0 &&
+        !next.localOnly
+      ) {
+        void fetchRecipeBasic(id).then((full) => {
+          if (ac.signal.aborted || !full) return;
+          setRecipe(full);
+          if (recipeNeedsMediaFetch(full)) void loadMedia();
+        });
+      }
     };
 
     const loadRecipe = async () => {
