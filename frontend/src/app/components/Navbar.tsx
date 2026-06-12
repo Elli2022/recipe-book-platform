@@ -50,7 +50,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-stone-200 bg-white">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link href="/" onClick={closeMenu} className="text-lg font-bold tracking-tight text-stone-950" prefetch>
           Receptbok

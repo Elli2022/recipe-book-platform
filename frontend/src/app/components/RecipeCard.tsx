@@ -27,7 +27,7 @@ const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
           <RecipeImage
             src={recipeImage(recipe)}
             alt={recipe.name}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]"
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-950/75 to-transparent p-4 pt-12">
             <div className="flex flex-wrap gap-2">

@@ -1,4 +1,4 @@
-import { stashRecipeDetail } from "@/lib/recipe-detail-cache";
+import { fetchRecipeBasic, stashRecipeDetail } from "@/lib/recipe-detail-cache";
 import { recipeImage, type Recipe } from "@/lib/recipes";
 
 const preloadedImages = new Set<string>();
@@ -33,4 +33,5 @@ export function prefetchRecipeDetail(
   stashRecipeDetail(recipe);
   router?.prefetch(`/recept/${recipe._id}`);
   preloadRecipeImageUrl(recipeImage(recipe));
+  void fetchRecipeBasic(recipe._id);
 }

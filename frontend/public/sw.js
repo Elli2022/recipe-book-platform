@@ -1,4 +1,4 @@
-const CACHE_NAME = "receptbok-v7";
+const CACHE_NAME = "receptbok-v8";
 const APP_SHELL = [
   "/manifest.webmanifest",
   "/images/heroImageLandingPage.jpg",

@@ -1,13 +1,14 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useParams } from "next/navigation";
 import Footer from "@/app/components/Footer";
 import RecipeDetailSkeleton from "@/app/components/RecipeDetailSkeleton";
 import RecipeImage from "@/app/components/RecipeImage";
 import {
   Recipe,
   getLocalRecipes,
-  normalizeRecipe,
   recipeImage,
   updateLocalRecipe,
 } from "@/lib/recipes";
@@ -16,16 +17,25 @@ import {
   peekRecipeDetail,
   recipeNeedsMediaFetch,
 } from "@/lib/recipe-detail-cache";
-import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { RecipeAttribution } from "@/lib/recipe-attribution";
 
-const ReceptDetalj = () => {
-  const router = useRouter();
-  const { id } = router.query;
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
+function resolveRecipeFromCache(recipeId: string): Recipe | null {
+  const local = getLocalRecipes().find((item) => item._id === recipeId);
+  if (local) {
+    return local;
+  }
+  return peekRecipeDetail(recipeId) ?? null;
+}
+
+const RecipeDetailClient = () => {
+  const params = useParams<{ id: string }>();
+  const id = typeof params?.id === "string" ? params.id : "";
+  const [recipe, setRecipe] = useState<Recipe | null>(() =>
+    id ? resolveRecipeFromCache(id) : null
+  );
   const [checkedSteps, setCheckedSteps] = useState<Record<number, boolean>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => Boolean(id) && !resolveRecipeFromCache(id));
   const [error, setError] = useState("");
   const [favoriteHint, setFavoriteHint] = useState("");
   const isLoggedIn = useLoggedIn();
@@ -41,7 +51,7 @@ const ReceptDetalj = () => {
   });
 
   useEffect(() => {
-    if (!id || typeof id !== "string") {
+    if (!id) {
       return;
     }
 
@@ -85,18 +95,16 @@ const ReceptDetalj = () => {
     };
 
     const loadRecipe = async () => {
+      const instant = resolveRecipeFromCache(id);
+      if (instant) {
+        showRecipe(instant);
+        return;
+      }
+
       setIsLoading(true);
       setError("");
-      const localRecipe = getLocalRecipes().find((item) => item._id === id);
-      if (localRecipe) {
-        showRecipe(localRecipe);
-        return;
-      }
-      const cached = peekRecipeDetail(id);
-      if (cached) {
-        showRecipe(cached);
-        return;
-      }
+      setRecipe(null);
+
       try {
         const basicRecipe = await fetchRecipeBasic(id);
         if (ac.signal.aborted) return;
@@ -195,7 +203,7 @@ const ReceptDetalj = () => {
     })();
   };
 
-  if (isLoading) {
+  if (!id || isLoading) {
     return <RecipeDetailSkeleton />;
   }
 
@@ -268,6 +276,7 @@ const ReceptDetalj = () => {
               alt={recipe.name}
               className="h-[420px] w-full object-cover"
               priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           </div>
 
@@ -476,7 +485,6 @@ const ReceptDetalj = () => {
             </div>
           </div>
         </section>
-
       </main>
 
       <Footer />
@@ -484,4 +492,4 @@ const ReceptDetalj = () => {
   );
 };
 
-export default ReceptDetalj;
+export default RecipeDetailClient;
