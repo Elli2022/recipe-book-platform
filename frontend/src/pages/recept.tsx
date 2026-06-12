@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import type { GetServerSideProps } from "next";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import RecipeBrowseControls from "@/app/components/RecipeBrowseControls";
 import RecipeCard from "@/app/components/RecipeCard";
 import RecipeImage from "@/app/components/RecipeImage";
 import {
@@ -326,37 +327,22 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
             din egen bok.
           </p>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-            <label className="sr-only" htmlFor="recipe-search">
-              Sök recept
-            </label>
-            <input
-              id="recipe-search"
-              type="search"
-              value={searchTerm}
-              onChange={(e) => {
-                const value = e.target.value;
+          <div className="mt-6 space-y-4">
+            <RecipeBrowseControls
+              searchTerm={searchTerm}
+              onSearchChange={(value) => {
                 setSearchTerm(value);
                 if (value.trim()) {
                   setMealFilter("alla");
                   setDietFilter(null);
                 }
               }}
-              placeholder="Sök recept, ingrediens eller kategori…"
-              className="h-12 rounded-full border border-stone-300 bg-stone-50 px-5 text-stone-950 outline-none focus:border-rose-600 focus:ring-4 focus:ring-rose-100"
+              mealFilter={mealFilter}
+              onMealFilterChange={setMealFilter}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              showSort
             />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortId)}
-              className="h-12 rounded-full border border-stone-300 bg-white px-4 text-sm font-medium text-stone-800"
-              aria-label="Sortering"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
             {isLoggedIn ? (
               <Link
                 href="#nytt-recept"
@@ -374,23 +360,6 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
             )}
           </div>
         </header>
-
-        <section className="mt-6 flex flex-wrap gap-2">
-          {MEAL_TYPES.map((meal) => (
-            <button
-              key={meal.id}
-              type="button"
-              onClick={() => setMealFilter(meal.id)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                mealFilter === meal.id
-                  ? "bg-rose-700 text-white shadow-sm"
-                  : "border border-stone-300 bg-white text-stone-700 hover:border-rose-300"
-              }`}
-            >
-              {meal.label}
-            </button>
-          ))}
-        </section>
 
         <section className="mt-3 flex flex-wrap gap-2">
           {DIET_TAGS.map((tag) => (

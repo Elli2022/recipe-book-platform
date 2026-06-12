@@ -9,25 +9,21 @@ const GULLS_CHOKLADKAKA_RECIPE_ID = "5e4c5d19-27d7-48d1-a5c0-a8ce07c42c29";
 const MARIA_ARLA_IMAGE_URL =
   "https://images.arla.com/recordid/F3051EC7-E4BC-4824-BAD357F7941DABBB/glutenfri-kladdkaka.jpg";
 
-const EMBEDDED_LIST_IMAGE_IDS = new Set([
-  JASMINA_RECIPE_ID,
-  ELLIS_LASAGNE_RECIPE_ID,
-  KOTTBULLAR_RECIPE_ID,
-  GULLS_CHOKLADKAKA_RECIPE_ID,
-]);
+const LIST_IMAGE_BY_ID: Record<string, string> = {
+  [JASMINA_RECIPE_ID]: "/images/jasminas-halloumisallad.jpg",
+  [ELLIS_LASAGNE_RECIPE_ID]: "/images/ellis-vegetariska-lasagne.jpg",
+  [KOTTBULLAR_RECIPE_ID]: "/images/kottbullar-vegofars.jpg",
+  [GULLS_CHOKLADKAKA_RECIPE_ID]: "/images/gulls-chokladkaka.jpg",
+  [MARIA_RECIPE_ID]: MARIA_ARLA_IMAGE_URL,
+};
 
 const imageForList = (row: Partial<RecipeRow>) => {
-  const image = row.image ?? "";
-  if (!image) {
-    return "";
+  if (row.id && LIST_IMAGE_BY_ID[row.id]) {
+    return LIST_IMAGE_BY_ID[row.id];
   }
-  if (image.startsWith("data:")) {
-    if (row.id === MARIA_RECIPE_ID) {
-      return MARIA_ARLA_IMAGE_URL;
-    }
-    if (row.id && EMBEDDED_LIST_IMAGE_IDS.has(row.id)) {
-      return image;
-    }
+
+  const image = row.image ?? "";
+  if (!image || image.startsWith("data:")) {
     return "";
   }
   return image;

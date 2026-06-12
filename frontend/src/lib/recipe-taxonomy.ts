@@ -1,3 +1,5 @@
+import type { Recipe } from "@/lib/recipes";
+
 export const MEAL_TYPES = [
   { id: "alla", label: "Alla måltider" },
   { id: "frukost", label: "Frukost" },
@@ -43,8 +45,6 @@ const MEAL_KEYWORDS: Record<Exclude<MealTypeId, "alla">, string[]> = {
   dessert: ["dessert", "efterrätt", "kaka", "choklad"],
   bak: ["bak", "bröd", "bullar", "pizza", "bakverk"],
 };
-
-import type { Recipe } from "@/lib/recipes";
 
 export function recipeMatchesCategory(recipe: Recipe, category: string) {
   if (!category || category === "Alla") {
