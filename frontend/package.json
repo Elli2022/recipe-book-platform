@@ -14,6 +14,7 @@
     "seed:family-recipes": "node --env-file=.env.local ./scripts/seed-family-recipes.mjs",
     "prepare:jasmina-image": "bash ./scripts/prepare-jasmina-image.sh",
     "update:ellis-lasagne-image": "node --env-file=.env.local ./scripts/update-ellis-lasagne-image.mjs",
+    "update:eleonora-spaghetti": "node --env-file=.env.local ./scripts/update-eleonora-spaghetti.mjs",
     "normalize:recipe-images": "node --env-file=.env.local ./scripts/normalize-recipe-images.mjs",
     "restore:embedded-images": "node --env-file=.env.local ./scripts/restore-embedded-recipe-images.mjs",
     "screenshots": "node ./scripts/capture-screenshots.mjs",
