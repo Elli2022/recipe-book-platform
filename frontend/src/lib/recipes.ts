@@ -1,8 +1,13 @@
+import { inferMealType } from "@/lib/recipe-taxonomy";
+
 export type Recipe = {
   _id: string;
   name: string;
   ownerName?: string;
   category?: string;
+  mealType?: string;
+  prepTimeMinutes?: number;
+  tags?: string[];
   portions?: number | string;
   description?: string;
   ingredients: string[];
@@ -52,6 +57,10 @@ export const normalizeRecipe = (recipe: any): Recipe => ({
       ? String(recipe.owner_name)
       : undefined,
   category: recipe?.category ? String(recipe.category) : "Okategoriserat",
+  mealType: recipe?.mealType ? String(recipe.mealType) : undefined,
+  prepTimeMinutes:
+    recipe?.prepTimeMinutes != null ? Number(recipe.prepTimeMinutes) : undefined,
+  tags: Array.isArray(recipe?.tags) ? recipe.tags.map(String) : [],
   portions: recipe?.portions ?? "",
   description: recipe?.description ? String(recipe.description) : "",
   ingredients: splitList(recipe?.ingredients),
@@ -80,12 +89,40 @@ export const recipeMatchesSearch = (recipe: Recipe, searchTerm: string) => {
   return [
     recipe.name,
     recipe.category,
+    recipe.mealType,
     recipe.description,
     recipe.ingredients.join(" "),
+    (recipe.tags ?? []).join(" "),
   ]
     .join(" ")
     .toLowerCase()
     .includes(query);
+};
+
+export const enrichRecipe = (recipe: Recipe): Recipe => ({
+  ...recipe,
+  mealType: recipe.mealType ?? inferMealType(recipe.category, recipe.name),
+  tags: recipe.tags ?? [],
+});
+
+export const sortRecipes = (
+  recipes: Recipe[],
+  sort: "newest" | "name" | "time"
+) => {
+  const copy = [...recipes];
+  if (sort === "name") {
+    return copy.sort((a, b) => a.name.localeCompare(b.name, "sv"));
+  }
+  if (sort === "time") {
+    return copy.sort(
+      (a, b) => (a.prepTimeMinutes ?? 9999) - (b.prepTimeMinutes ?? 9999)
+    );
+  }
+  return copy.sort((a, b) => {
+    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return bTime - aTime;
+  });
 };
 
 export const getLocalRecipes = (): Recipe[] => {

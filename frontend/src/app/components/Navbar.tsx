@@ -46,7 +46,7 @@ const Navbar = () => {
     return [
       "rounded-full px-3 py-2 text-sm font-medium transition",
       active
-        ? "bg-emerald-50 text-emerald-800"
+        ? "bg-rose-50 text-rose-800"
         : "text-stone-700 hover:bg-stone-100 hover:text-stone-950",
     ].join(" ");
   };
@@ -89,7 +89,7 @@ const Navbar = () => {
           <Link
             href="/recept#nytt-recept"
             onClick={closeMenu}
-            className="rounded-full bg-emerald-700 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+            className="rounded-full bg-rose-700 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-rose-800"
           >
             Nytt recept
           </Link>
