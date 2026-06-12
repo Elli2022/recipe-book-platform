@@ -86,17 +86,22 @@ export const recipeMatchesSearch = (recipe: Recipe, searchTerm: string) => {
     return true;
   }
 
-  return [
+  const haystack = [
     recipe.name,
     recipe.category,
     recipe.mealType,
+    recipe.ownerName,
     recipe.description,
     recipe.ingredients.join(" "),
+    recipe.instructions.join(" "),
     (recipe.tags ?? []).join(" "),
   ]
+    .filter(Boolean)
     .join(" ")
-    .toLowerCase()
-    .includes(query);
+    .toLowerCase();
+
+  const words = query.split(/\s+/).filter(Boolean);
+  return words.every((word) => haystack.includes(word));
 };
 
 export const enrichRecipe = (recipe: Recipe): Recipe => ({

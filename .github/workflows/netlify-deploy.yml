@@ -1,9 +1,9 @@
 name: Deploy to Netlify
 
+# Netlify deploys automatically via its own GitHub integration.
+# This workflow is manual-only until NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID
+# are added as repository secrets (otherwise every push sends failure emails).
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
 
 jobs:

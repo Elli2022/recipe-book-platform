@@ -1,6 +1,7 @@
 import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import type { GetServerSideProps } from "next";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import RecipeCard from "@/app/components/RecipeCard";
@@ -28,7 +29,18 @@ import {
   type SortId,
 } from "@/lib/recipe-taxonomy";
 
-type Props = { recipes: Recipe[] };
+type Props = {
+  recipes: Recipe[];
+  initialSearch: string;
+  initialMeal: MealTypeId;
+};
+
+function mealFromQuery(value: string | string[] | undefined): MealTypeId {
+  if (typeof value === "string" && MEAL_TYPES.some((meal) => meal.id === value)) {
+    return value as MealTypeId;
+  }
+  return "alla";
+}
 
 const emptyDraft: RecipeDraft = {
   name: "",
@@ -41,26 +53,40 @@ const emptyDraft: RecipeDraft = {
   imageDataUrl: "",
 };
 
-export async function getServerSideProps() {
+export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
+  const initialSearch =
+    typeof context.query.search === "string" ? context.query.search : "";
+  const initialMeal = initialSearch.trim()
+    ? "alla"
+    : mealFromQuery(context.query.meal);
+
   try {
     const recipes = await listRecipesForServer();
     return {
       props: {
         recipes: recipes.map(normalizeRecipe).map(enrichRecipe),
+        initialSearch,
+        initialMeal,
       },
     };
   } catch {
-    return { props: { recipes: [] } };
+    return {
+      props: {
+        recipes: [],
+        initialSearch,
+        initialMeal,
+      },
+    };
   }
-}
+};
 
-const ReceptPage = ({ recipes }: Props) => {
+const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
   const router = useRouter();
   const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>(recipes);
   const localRecipes = useLocalRecipes();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [mealFilter, setMealFilter] = useState<MealTypeId>("alla");
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [mealFilter, setMealFilter] = useState<MealTypeId>(initialMeal);
   const [dietFilter, setDietFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortId>("newest");
   const [draft, setDraft] = useState<RecipeDraft>(emptyDraft);
@@ -77,13 +103,29 @@ const ReceptPage = ({ recipes }: Props) => {
   };
 
   useEffect(() => {
-    const q = router.query.search;
-    const meal = router.query.meal;
-    if (typeof q === "string") setSearchTerm(q);
-    if (typeof meal === "string" && MEAL_TYPES.some((m) => m.id === meal)) {
-      setMealFilter(meal as MealTypeId);
-    }
-  }, [router.query.search, router.query.meal]);
+    const syncFromUrl = (url: string) => {
+      const query = url.split("?")[1] ?? "";
+      const params = new URLSearchParams(query);
+      const q = params.get("search");
+      const meal = params.get("meal");
+
+      if (q) {
+        setSearchTerm(q);
+        setMealFilter("alla");
+        setDietFilter(null);
+        return;
+      }
+
+      setSearchTerm("");
+      setMealFilter(mealFromQuery(meal ?? undefined));
+    };
+
+    const onRouteChange = (url: string) => syncFromUrl(url);
+    router.events.on("routeChangeComplete", onRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", onRouteChange);
+    };
+  }, [router.events]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -104,9 +146,12 @@ const ReceptPage = ({ recipes }: Props) => {
     [localRecipes, remoteRecipes]
   );
 
+  const hasActiveSearch = searchTerm.trim().length > 0;
+
   const filteredRecipes = useMemo(() => {
     const list = allRecipes.filter((recipe) => {
       if (!recipeMatchesSearch(recipe, searchTerm)) return false;
+      if (hasActiveSearch) return true;
       if (mealFilter !== "alla" && recipe.mealType !== mealFilter) return false;
       if (dietFilter) {
         const tags = (recipe.tags ?? []).map((t) => t.toLowerCase());
@@ -133,7 +178,7 @@ const ReceptPage = ({ recipes }: Props) => {
       return true;
     });
     return sortRecipes(list, sortBy);
-  }, [allRecipes, searchTerm, mealFilter, dietFilter, sortBy]);
+  }, [allRecipes, searchTerm, hasActiveSearch, mealFilter, dietFilter, sortBy]);
 
   const onDraftChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -288,7 +333,14 @@ const ReceptPage = ({ recipes }: Props) => {
               id="recipe-search"
               type="search"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
+                if (value.trim()) {
+                  setMealFilter("alla");
+                  setDietFilter(null);
+                }
+              }}
               placeholder="Sök recept, ingrediens eller kategori…"
               className="h-12 rounded-full border border-stone-300 bg-stone-50 px-5 text-stone-950 outline-none focus:border-rose-600 focus:ring-4 focus:ring-rose-100"
             />
@@ -362,7 +414,14 @@ const ReceptPage = ({ recipes }: Props) => {
           <p className="mt-4 text-sm font-medium text-stone-700">{formStatus}</p>
         )}
 
-        <p className="mt-6 text-sm text-stone-500">{filteredRecipes.length} recept</p>
+        <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <p className="text-sm text-stone-500">{filteredRecipes.length} recept</p>
+          {hasActiveSearch && (
+            <p className="text-sm text-stone-500">
+              Söker i alla recept (filter ignoreras)
+            </p>
+          )}
+        </div>
 
         <section className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredRecipes.map((recipe) => (
@@ -412,7 +471,9 @@ const ReceptPage = ({ recipes }: Props) => {
           <section className="mt-8 rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
             <h2 className="text-xl font-bold text-stone-950">Inga recept hittades</h2>
             <p className="mt-2 text-stone-600">
-              Prova en annan sökning eller lägg till ett nytt recept.
+              {hasActiveSearch
+                ? "Prova ett annat sökord eller rensa sökfältet för att filtrera på måltid igen."
+                : "Prova en annan sökning eller lägg till ett nytt recept."}
             </p>
           </section>
         )}
