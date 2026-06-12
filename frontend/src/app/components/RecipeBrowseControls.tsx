@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   DIET_TAGS,
   MEAL_TYPES,
@@ -14,19 +15,27 @@ type RecipeBrowseControlsProps = {
   onSearchChange: (value: string) => void;
   mealFilter: MealTypeId;
   onMealFilterChange: (value: MealTypeId) => void;
-  dietFilter?: DietTagId | null;
-  onDietFilterChange?: (value: DietTagId | null) => void;
+  dietFilter: DietTagId | null;
+  onDietFilterChange: (value: DietTagId) => void;
   sortBy?: SortId;
   onSortChange?: (value: SortId) => void;
   searchId?: string;
   showSort?: boolean;
+  action?: ReactNode;
 };
 
-const chipClass = (active: boolean) =>
+const mealChipClass = (active: boolean) =>
   `rounded-full px-4 py-2 text-sm font-medium transition ${
     active
       ? "bg-rose-700 text-white shadow-sm"
       : "border border-stone-300 bg-white text-stone-700 hover:border-rose-300"
+  }`;
+
+const dietChipClass = (active: boolean) =>
+  `rounded-full border px-4 py-2 text-sm font-medium transition ${
+    active
+      ? "border-rose-700 bg-rose-50 text-rose-800"
+      : "border-stone-200 bg-white text-stone-600"
   }`;
 
 const RecipeBrowseControls = ({
@@ -34,20 +43,23 @@ const RecipeBrowseControls = ({
   onSearchChange,
   mealFilter,
   onMealFilterChange,
-  dietFilter = null,
+  dietFilter,
   onDietFilterChange,
   sortBy = "newest",
   onSortChange,
   searchId = "recipe-search",
   showSort = false,
+  action,
 }: RecipeBrowseControlsProps) => {
+  const hasToolbarExtras = showSort || action;
+
   return (
     <>
       <div
         className={
-          showSort
-            ? "grid gap-3 sm:grid-cols-[1fr_auto]"
-            : "flex flex-col gap-3 sm:flex-row"
+          hasToolbarExtras
+            ? "grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+            : "flex flex-col gap-3 sm:flex-row sm:items-center"
         }
       >
         <label className="sr-only" htmlFor={searchId}>
@@ -59,7 +71,7 @@ const RecipeBrowseControls = ({
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Sök recept, ingrediens eller kategori…"
-          className="h-12 flex-1 rounded-full border border-stone-300 bg-stone-50 px-5 text-stone-950 outline-none focus:border-rose-600 focus:ring-4 focus:ring-rose-100"
+          className="h-12 w-full flex-1 rounded-full border border-stone-300 bg-stone-50 px-5 text-stone-950 outline-none focus:border-rose-600 focus:ring-4 focus:ring-rose-100"
         />
         {showSort && onSortChange && (
           <select
@@ -75,6 +87,7 @@ const RecipeBrowseControls = ({
             ))}
           </select>
         )}
+        {action}
       </div>
 
       <section className="mt-4 flex flex-wrap gap-2">
@@ -83,29 +96,25 @@ const RecipeBrowseControls = ({
             key={meal.id}
             type="button"
             onClick={() => onMealFilterChange(meal.id)}
-            className={chipClass(mealFilter === meal.id)}
+            className={mealChipClass(mealFilter === meal.id)}
           >
             {meal.label}
           </button>
         ))}
       </section>
 
-      {onDietFilterChange && (
-        <section className="mt-2 flex flex-wrap gap-2">
-          {DIET_TAGS.map((tag) => (
-            <button
-              key={tag.id}
-              type="button"
-              onClick={() =>
-                onDietFilterChange(dietFilter === tag.id ? null : tag.id)
-              }
-              className={chipClass(dietFilter === tag.id)}
-            >
-              {tag.label}
-            </button>
-          ))}
-        </section>
-      )}
+      <section className="mt-2 flex flex-wrap gap-2">
+        {DIET_TAGS.map((tag) => (
+          <button
+            key={tag.id}
+            type="button"
+            onClick={() => onDietFilterChange(tag.id)}
+            className={dietChipClass(dietFilter === tag.id)}
+          >
+            {tag.label}
+          </button>
+        ))}
+      </section>
     </>
   );
 };

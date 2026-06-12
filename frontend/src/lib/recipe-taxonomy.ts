@@ -12,6 +12,13 @@ export const MEAL_TYPES = [
 
 export type MealTypeId = (typeof MEAL_TYPES)[number]["id"];
 
+export function mealFromQuery(value: string | null | undefined): MealTypeId {
+  if (typeof value === "string" && MEAL_TYPES.some((meal) => meal.id === value)) {
+    return value as MealTypeId;
+  }
+  return "alla";
+}
+
 export const SORT_OPTIONS = [
   { id: "newest", label: "Senast tillagda" },
   { id: "name", label: "A–Ö" },

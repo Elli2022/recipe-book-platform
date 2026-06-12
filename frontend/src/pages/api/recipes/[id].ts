@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(
           recipeRowToClient({
             ...row,
-            image: null,
+            image: resolveRecipeImageForServer(id, null) || null,
             source_image: null,
           } as RecipeRow)
         );

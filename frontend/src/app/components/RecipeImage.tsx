@@ -9,6 +9,8 @@ type RecipeImageProps = {
   alt: string;
   className?: string;
   priority?: boolean;
+  loading?: "lazy" | "eager";
+  sizes?: string;
 };
 
 const RecipeImage = ({
@@ -16,6 +18,8 @@ const RecipeImage = ({
   alt,
   className = "h-56 w-full object-cover",
   priority = false,
+  loading,
+  sizes = "(max-width: 768px) 100vw, 33vw",
 }: RecipeImageProps) => {
   const resolved = src?.trim() || FALLBACK;
   const unoptimized =
@@ -30,7 +34,8 @@ const RecipeImage = ({
       className={className}
       unoptimized={unoptimized}
       priority={priority}
-      sizes="(max-width: 768px) 100vw, 33vw"
+      loading={priority ? undefined : loading ?? "lazy"}
+      sizes={sizes}
       onError={(event) => {
         const target = event.currentTarget;
         if (!target.src.endsWith(FALLBACK)) {

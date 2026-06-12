@@ -18,11 +18,11 @@ const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
 
   return (
     <article
-      className="recipe-card group overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+      className="recipe-card group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
       onMouseEnter={onPrefetch}
       onFocusCapture={onPrefetch}
     >
-      <Link href={href} className="block">
+      <Link href={href} className="flex flex-1 flex-col" onClick={onPrefetch}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <RecipeImage
             src={recipeImage(recipe)}
@@ -44,11 +44,11 @@ const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
             </div>
           </div>
         </div>
-        <div className="p-5">
+        <div className="flex flex-1 flex-col p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
             {recipe.category || "Okategoriserat"}
           </p>
-          <h2 className="mt-2 text-xl font-bold leading-snug text-stone-950 group-hover:text-rose-800">
+          <h2 className="mt-2 line-clamp-2 text-xl font-bold leading-snug text-stone-950 group-hover:text-rose-800">
             {recipe.name}
           </h2>
           {recipe.ownerName && (
@@ -56,20 +56,18 @@ const RecipeCard = ({ recipe, href, onPrefetch, footer }: RecipeCardProps) => {
               Tipsat av {recipe.ownerName}
             </p>
           )}
-          {recipe.description && (
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-stone-600">
-              {recipe.description}
-            </p>
-          )}
-          <p className="mt-4 text-sm text-stone-500">
+          <p className="mt-2 line-clamp-2 min-h-[3rem] text-sm leading-6 text-stone-600">
+            {recipe.description || "\u00A0"}
+          </p>
+          <p className="mt-auto pt-4 text-sm text-stone-500">
             {recipe.ingredients.length} ingredienser
             {recipe.portions ? ` · ${recipe.portions} portioner` : ""}
           </p>
         </div>
       </Link>
-      {footer && (
-        <div className="border-t border-stone-100 px-5 py-3">{footer}</div>
-      )}
+      <div className="min-h-[3.25rem] border-t border-stone-100 px-5 py-3">
+        {footer ?? <span className="sr-only">Inga åtgärder</span>}
+      </div>
     </article>
   );
 };
