@@ -17,6 +17,12 @@ import {
   peekRecipeDetail,
   recipeNeedsMediaFetch,
 } from "@/lib/recipe-detail-cache";
+import {
+  addFavoriteId,
+  fetchFavoriteIds,
+  peekFavoriteIds,
+  removeFavoriteId,
+} from "@/lib/favorites-cache";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { RecipeAttribution } from "@/lib/recipe-attribution";
 
@@ -39,7 +45,10 @@ const RecipeDetailClient = () => {
   const [error, setError] = useState("");
   const [favoriteHint, setFavoriteHint] = useState("");
   const isLoggedIn = useLoggedIn();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => {
+    if (!id) return false;
+    return peekFavoriteIds()?.includes(id) ?? false;
+  });
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -137,19 +146,12 @@ const RecipeDetailClient = () => {
     if (!isLoggedIn || !recipe?._id) {
       return;
     }
-    (async () => {
-      try {
-        const response = await fetch("/api/favorites", { credentials: "include" });
-        if (!response.ok) {
-          return;
-        }
-        const data = await response.json();
-        const favoriteIds = Array.isArray(data.recipeIds) ? data.recipeIds : [];
-        setIsFavorite(favoriteIds.includes(recipe._id));
-      } catch {
-        // Ignore
-      }
-    })();
+    if (peekFavoriteIds() !== undefined) {
+      return;
+    }
+    void fetchFavoriteIds().then((ids) => {
+      setIsFavorite(ids.includes(recipe._id));
+    });
   }, [isLoggedIn, recipe?._id]);
 
   const completedSteps = useMemo(
@@ -191,6 +193,7 @@ const RecipeDetailClient = () => {
             return;
           }
           setIsFavorite(false);
+          removeFavoriteId(recipe._id);
         } else {
           const response = await fetch("/api/favorites", {
             method: "POST",
@@ -208,6 +211,7 @@ const RecipeDetailClient = () => {
             return;
           }
           setIsFavorite(true);
+          addFavoriteId(recipe._id);
         }
       } catch {
         setFavoriteHint("Kunde inte uppdatera favorit just nu.");

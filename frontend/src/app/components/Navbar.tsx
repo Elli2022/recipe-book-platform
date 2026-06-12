@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { notifyAuthChange } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import {
+  clearFavoriteIdsCache,
+  peekFavoriteIds,
+  prefetchFavoriteIds,
+} from "@/lib/favorites-cache";
 import { peekRecipeList, prefetchRecipeList } from "@/lib/recipe-list-cache";
 import { useActivePathname } from "@/lib/use-active-pathname";
 
@@ -28,12 +33,16 @@ const Navbar = () => {
     if (!peekRecipeList()) {
       prefetchRecipeList();
     }
-  }, [router]);
+    if (isLoggedIn && peekFavoriteIds() === undefined) {
+      prefetchFavoriteIds();
+    }
+  }, [router, isLoggedIn]);
 
   const closeMenu = () => setMenuOpen(false);
 
   const onLogout = () => {
     window.localStorage.removeItem("receptbok.user");
+    clearFavoriteIdsCache();
     notifyAuthChange();
     window.location.href = "/";
   };

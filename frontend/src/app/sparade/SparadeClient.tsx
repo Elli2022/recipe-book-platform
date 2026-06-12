@@ -13,23 +13,33 @@ import {
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
+import {
+  fetchFavoriteIds,
+  peekFavoriteIds,
+  removeFavoriteId,
+} from "@/lib/favorites-cache";
 import { useLocalRecipes } from "@/lib/use-local-recipes";
 import { fetchRecipeList, peekRecipeList } from "@/lib/recipe-list-cache";
 
 const SparadeClient = () => {
-  const cached = peekRecipeList();
-  const [recipes, setRecipes] = useState<Recipe[]>(cached ?? []);
-  const [isLoading, setIsLoading] = useState(!cached);
-  const localRecipes = useLocalRecipes();
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const isLoggedIn = useLoggedIn();
+  const cachedRecipes = peekRecipeList();
+  const cachedFavorites = isLoggedIn ? peekFavoriteIds() : undefined;
+
+  const [recipes, setRecipes] = useState<Recipe[]>(cachedRecipes ?? []);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(cachedRecipes === undefined);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(cachedFavorites ?? []);
+  const [favoritesFetched, setFavoritesFetched] = useState(
+    cachedFavorites !== undefined
+  );
+  const localRecipes = useLocalRecipes();
 
   useEffect(() => {
     let cancelled = false;
     void fetchRecipeList().then((list) => {
       if (!cancelled) {
         setRecipes(list);
-        setIsLoading(false);
+        setIsLoadingRecipes(false);
       }
     });
     return () => {
@@ -38,31 +48,39 @@ const SparadeClient = () => {
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
-    void (async () => {
-      try {
-        const response = await fetch("/api/favorites", { credentials: "include" });
-        if (!response.ok) return;
-        const data = await response.json();
-        setFavoriteIds(Array.isArray(data.recipeIds) ? data.recipeIds : []);
-      } catch {
-        // ignore
+    if (!isLoggedIn || favoritesFetched) {
+      return;
+    }
+
+    let cancelled = false;
+    void fetchFavoriteIds().then((ids) => {
+      if (!cancelled) {
+        setFavoriteIds(ids);
+        setFavoritesFetched(true);
       }
-    })();
-  }, [isLoggedIn]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, favoritesFetched]);
 
   const allRecipes = useMemo(
     () => mergeRecipes(localRecipes, recipes),
     [localRecipes, recipes]
   );
 
-  const savedRecipes = useMemo(
-    () =>
-      allRecipes.filter(
-        (recipe) => favoriteIds.includes(recipe._id) || recipe.localOnly
-      ),
-    [allRecipes, favoriteIds]
-  );
+  const savedRecipes = useMemo(() => {
+    const ids = isLoggedIn ? favoriteIds : [];
+    return allRecipes.filter(
+      (recipe) => ids.includes(recipe._id) || recipe.localOnly
+    );
+  }, [allRecipes, favoriteIds, isLoggedIn]);
+
+  const showSkeleton =
+    isLoggedIn &&
+    savedRecipes.length === 0 &&
+    (isLoadingRecipes || !favoritesFetched);
 
   const onToggleFavorite = (recipeId: string) => {
     if (!isLoggedIn) return;
@@ -73,6 +91,7 @@ const SparadeClient = () => {
           credentials: "include",
         });
         if (!response.ok) return;
+        removeFavoriteId(recipeId);
         setFavoriteIds((current) => current.filter((id) => id !== recipeId));
       } catch {
         // ignore
@@ -101,7 +120,7 @@ const SparadeClient = () => {
           </p>
         </section>
 
-        {isLoading ? (
+        {showSkeleton ? (
           <RecipeListSkeleton count={3} />
         ) : !isLoggedIn ? (
           <section className="mt-8 rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center">

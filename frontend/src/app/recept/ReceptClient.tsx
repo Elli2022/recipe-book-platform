@@ -21,6 +21,12 @@ import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { useLocalRecipes } from "@/lib/use-local-recipes";
 import {
+  addFavoriteId,
+  fetchFavoriteIds,
+  peekFavoriteIds,
+  removeFavoriteId,
+} from "@/lib/favorites-cache";
+import {
   fetchRecipeList,
   peekRecipeList,
   prependRecipeToList,
@@ -60,11 +66,14 @@ const ReceptClient = ({
   const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>(cached ?? []);
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(!cached);
   const localRecipes = useLocalRecipes();
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(
+    () => peekFavoriteIds() ?? []
+  );
   const [draft, setDraft] = useState<RecipeDraft>(emptyDraft);
   const [formStatus, setFormStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const isLoggedIn = useLoggedIn();
+  const activeFavoriteIds = isLoggedIn ? favoriteIds : [];
   const [heartLoadingId, setHeartLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,19 +89,15 @@ const ReceptClient = ({
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn) {
+      return;
+    }
     const loadFavorites = () => {
-      void (async () => {
-        try {
-          const response = await fetch("/api/favorites", { credentials: "include" });
-          if (!response.ok) return;
-          const data = await response.json();
-          setFavoriteIds(Array.isArray(data.recipeIds) ? data.recipeIds : []);
-        } catch {
-          // lazy load ok
-        }
-      })();
+      void fetchFavoriteIds().then(setFavoriteIds);
     };
+    if (peekFavoriteIds() !== undefined) {
+      return;
+    }
     if (typeof requestIdleCallback !== "undefined") {
       const id = requestIdleCallback(loadFavorites, { timeout: 2000 });
       return () => cancelIdleCallback(id);
@@ -208,7 +213,7 @@ const ReceptClient = ({
       setFormStatus("Logga in för att spara favoriter.");
       return;
     }
-    const isAlreadyFavorite = favoriteIds.includes(recipeId);
+    const isAlreadyFavorite = activeFavoriteIds.includes(recipeId);
     setHeartLoadingId(recipeId);
 
     void (async () => {
@@ -219,6 +224,7 @@ const ReceptClient = ({
             credentials: "include",
           });
           if (!response.ok) throw new Error();
+          removeFavoriteId(recipeId);
           setFavoriteIds((c) => c.filter((id) => id !== recipeId));
         } else {
           const response = await fetch("/api/favorites", {
@@ -228,6 +234,7 @@ const ReceptClient = ({
             body: JSON.stringify({ recipeId }),
           });
           if (!response.ok) throw new Error();
+          addFavoriteId(recipeId);
           setFavoriteIds((c) =>
             c.includes(recipeId) ? c : [recipeId, ...c]
           );
@@ -320,19 +327,19 @@ const ReceptClient = ({
                       onClick={() => onToggleFavorite(recipe._id)}
                       disabled={heartLoadingId === recipe._id}
                       aria-label={
-                        favoriteIds.includes(recipe._id)
+                        activeFavoriteIds.includes(recipe._id)
                           ? "Ta bort favorit"
                           : "Spara favorit"
                       }
                       className={`text-2xl transition disabled:opacity-50 ${
-                        favoriteIds.includes(recipe._id)
+                        activeFavoriteIds.includes(recipe._id)
                           ? "text-rose-600"
                           : "text-stone-400 hover:text-rose-500"
                       }`}
                     >
-                      {favoriteIds.includes(recipe._id) ? "♥" : "♡"}
+                      {activeFavoriteIds.includes(recipe._id) ? "♥" : "♡"}
                     </button>
-                    {favoriteIds.includes(recipe._id) && (
+                    {activeFavoriteIds.includes(recipe._id) && (
                       <button
                         type="button"
                         onClick={() => onCreateMyVersion(recipe)}
