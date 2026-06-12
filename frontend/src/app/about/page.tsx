@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
@@ -12,7 +11,6 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
       <main className="mx-auto max-w-3xl px-4 py-12">
         <section className="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">

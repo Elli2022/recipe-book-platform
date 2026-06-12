@@ -1,11 +1,9 @@
 import Link from "next/link";
-import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
       <main className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center">
         <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
           404
