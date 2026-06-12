@@ -1,6 +1,6 @@
 name: Deploy to Netlify
 
-# Kör manuellt om Netlify inte deployar från GitHub automatiskt.
+# Reserv: manuell deploy via CLI om build hook inte räcker.
 # Kräver NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID i repo secrets.
 on:
   workflow_dispatch:

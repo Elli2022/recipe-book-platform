@@ -1,27 +1,26 @@
 # Netlify auto-deploy från GitHub
 
-Varje push till `master` kan deploya till [recipe-book-platform.netlify.app](https://recipe-book-platform.netlify.app) via GitHub Actions (`.github/workflows/netlify-deploy.yml`).
+Varje push till `master` deployar automatiskt till [recipe-book-platform.netlify.app](https://recipe-book-platform.netlify.app) när CI är grön.
 
-## Engångsinställning (GitHub Secrets)
+## Så funkar det
 
-Gå till **GitHub → recipe-book-platform → Settings → Secrets and variables → Actions** och lägg till:
+1. **Push till `master`** → workflow `CI` kör lint, build och e2e.
+2. När testerna passerar → **Deploy**-steget anropar Netlify build hook (`NETLIFY_BUILD_HOOK`).
+3. Netlify bygger senaste commit från `Elli2022/recipe-book-platform` enligt `netlify.toml`.
 
-| Secret | Var du hittar värdet |
-|--------|----------------------|
-| `NETLIFY_AUTH_TOKEN` | [Netlify → User settings → Applications → Personal access tokens](https://app.netlify.com/user/applications#personal-access-tokens) → **New access token** |
-| `NETLIFY_SITE_ID` | `31242a3e-998f-45ad-99bd-17b786aa626d` (recipe-book-platform) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → API Keys (publishable/anon) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys (service_role) |
+Netlify-sajten är kopplad till repot `Elli2022/recipe-book-platform`, branch `master`.
 
-Efter secrets är sparade: pusha till `master` eller kör workflow manuellt under **Actions → Deploy to Netlify → Run workflow**.
+## GitHub Secrets (redan konfigurerat)
 
-## Alternativ: Netlify GitHub-integration
+| Secret | Syfte |
+|--------|--------|
+| `NETLIFY_BUILD_HOOK` | Triggar produktionsbuild efter lyckad CI |
+| `NEXT_PUBLIC_SUPABASE_URL` | E2E / build i CI |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | E2E / build i CI |
 
-I [Netlify site settings](https://app.netlify.com/projects/recipe-book-platform/configuration/deploys#continuous-deployment):
+Valfritt för manuell CLI-deploy (`Actions → Deploy to Netlify`):
 
-1. **Link repository** → `Elli2022/recipe-book-platform`
-2. Branch: **master**
-3. Build command / publish directory läses från `netlify.toml` i repots rot
-
-Om både Netlify-integration **och** GitHub Actions deployar kan dubbla builds uppstå — välj en metod.
+| Secret | Värde |
+|--------|--------|
+| `NETLIFY_AUTH_TOKEN` | [Personal access token](https://app.netlify.com/user/applications#personal-access-tokens) |
+| `NETLIFY_SITE_ID` | `31242a3e-998f-45ad-99bd-17b786aa626d` |
