@@ -49,8 +49,8 @@ export function useRecipeBrowseFilters(
     }
   }, []);
 
-  const onDietFilterChange = useCallback((value: DietTagId | null) => {
-    setDietFilter(value);
+  const onDietFilterChange = useCallback((tagId: DietTagId) => {
+    setDietFilter((current) => (current === tagId ? null : tagId));
   }, []);
 
   const resetFilters = useCallback(() => {
