@@ -2,29 +2,50 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Footer from "./components/Footer";
 import RecipeCard from "./components/RecipeCard";
-import { Recipe } from "@/lib/recipes";
-import { MEAL_TYPES } from "@/lib/recipe-taxonomy";
+import { Recipe, recipeMatchesSearch } from "@/lib/recipes";
+import {
+  browseCategoriesFromRecipes,
+  recipeMatchesCategory,
+} from "@/lib/recipe-taxonomy";
 
 type HomeClientProps = {
-  latestRecipes: Recipe[];
+  recipes: Recipe[];
   totalCount: number;
 };
 
-/** Landningssidan — sök/filtrering skickar till /recept (samma som resten av sajten). */
-const HomeClient = ({ latestRecipes, totalCount }: HomeClientProps) => {
-  const router = useRouter();
+/** Landningssidan filtrerar recept direkt här — ingen omdirigering till tom /recept. */
+const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const browseMeals = MEAL_TYPES.filter((m) => m.id !== "alla").slice(0, 6);
+  const [selectedCategory, setSelectedCategory] = useState("Alla");
+
+  const categories = useMemo(
+    () => browseCategoriesFromRecipes(recipes),
+    [recipes]
+  );
+
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter((recipe) => {
+      if (!recipeMatchesSearch(recipe, searchTerm)) {
+        return false;
+      }
+      return recipeMatchesCategory(recipe, selectedCategory);
+    });
+  }, [recipes, searchTerm, selectedCategory]);
 
   const onSearch = (event: FormEvent) => {
     event.preventDefault();
-    const q = searchTerm.trim();
-    router.push(q ? `/recept?search=${encodeURIComponent(q)}` : "/recept");
+    setSelectedCategory("Alla");
   };
+
+  const sectionTitle =
+    selectedCategory !== "Alla"
+      ? selectedCategory
+      : searchTerm.trim()
+        ? `Sökresultat för “${searchTerm.trim()}”`
+        : "Recept att laga nu";
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -70,14 +91,19 @@ const HomeClient = ({ latestRecipes, totalCount }: HomeClientProps) => {
             </form>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              {browseMeals.map((meal) => (
-                <Link
-                  key={meal.id}
-                  href={`/recept?meal=${meal.id}`}
-                  className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/25"
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setSelectedCategory(category)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium backdrop-blur transition ${
+                    selectedCategory === category
+                      ? "bg-rose-600 text-white shadow-sm"
+                      : "bg-white/15 text-white hover:bg-white/25"
+                  }`}
                 >
-                  {meal.label}
-                </Link>
+                  {category}
+                </button>
               ))}
             </div>
           </div>
@@ -87,23 +113,28 @@ const HomeClient = ({ latestRecipes, totalCount }: HomeClientProps) => {
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-rose-700">
-                Senast i boken
+                {selectedCategory !== "Alla" || searchTerm.trim()
+                  ? "Filtrerat urval"
+                  : "Senast i boken"}
               </p>
               <h2 className="mt-2 text-3xl font-bold text-stone-950">
-                Recept att laga nu
+                {sectionTitle}
               </h2>
+              <p className="mt-2 text-sm text-stone-500">
+                {filteredRecipes.length} av {totalCount} recept
+              </p>
             </div>
             <Link
               href="/recept"
               className="text-sm font-semibold text-rose-700 hover:underline"
             >
-              Visa alla ({totalCount})
+              Öppna hela samlingen
             </Link>
           </div>
 
-          {latestRecipes.length > 0 ? (
+          {filteredRecipes.length > 0 ? (
             <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {latestRecipes.map((recipe) => (
+              {filteredRecipes.map((recipe) => (
                 <RecipeCard
                   key={recipe._id}
                   recipe={recipe}
@@ -113,13 +144,19 @@ const HomeClient = ({ latestRecipes, totalCount }: HomeClientProps) => {
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-dashed border-stone-300 bg-white p-8 text-center">
-              <p className="text-stone-600">Inga recept ännu.</p>
-              <Link
-                href="/recept#nytt-recept"
+              <p className="text-stone-600">
+                Inga recept matchar ditt val. Prova en annan kategori eller sökning.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory("Alla");
+                  setSearchTerm("");
+                }}
                 className="mt-4 inline-flex rounded-full bg-rose-700 px-5 py-3 text-sm font-semibold text-white"
               >
-                Lägg till första receptet
-              </Link>
+                Visa alla recept
+              </button>
             </div>
           )}
         </section>

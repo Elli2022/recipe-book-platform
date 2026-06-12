@@ -8,10 +8,5 @@ export default async function Home() {
   const recipes = await listRecipesForServer();
   const normalized = recipes.map(normalizeRecipe).map(enrichRecipe);
 
-  return (
-    <HomeClient
-      latestRecipes={normalized.slice(0, 6)}
-      totalCount={normalized.length}
-    />
-  );
+  return <HomeClient recipes={normalized} totalCount={normalized.length} />;
 }

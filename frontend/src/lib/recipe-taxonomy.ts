@@ -44,6 +44,54 @@ const MEAL_KEYWORDS: Record<Exclude<MealTypeId, "alla">, string[]> = {
   bak: ["bak", "bröd", "bullar", "pizza", "bakverk"],
 };
 
+import type { Recipe } from "@/lib/recipes";
+
+export function recipeMatchesCategory(recipe: Recipe, category: string) {
+  if (!category || category === "Alla") {
+    return true;
+  }
+
+  const selected = category.toLowerCase();
+  const parts = (recipe.category ?? "Okategoriserat")
+    .split(",")
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean);
+
+  return parts.includes(selected) || parts.some((part) => part.includes(selected));
+}
+
+export function recipeMatchesMeal(recipe: Recipe, mealFilter: MealTypeId) {
+  if (mealFilter === "alla") {
+    return true;
+  }
+
+  const inferred =
+    recipe.mealType ?? inferMealType(recipe.category, recipe.name);
+  if (inferred === mealFilter) {
+    return true;
+  }
+
+  const keywords = MEAL_KEYWORDS[mealFilter];
+  const haystack = `${recipe.category ?? ""} ${recipe.name ?? ""}`.toLowerCase();
+  return keywords.some((word) => haystack.includes(word));
+}
+
+export function browseCategoriesFromRecipes(recipes: Recipe[]) {
+  const categories = new Set<string>();
+
+  for (const recipe of recipes) {
+    const raw = recipe.category?.trim() || "Okategoriserat";
+    for (const part of raw.split(",")) {
+      const label = part.trim();
+      if (label) {
+        categories.add(label);
+      }
+    }
+  }
+
+  return ["Alla", ...Array.from(categories).sort((a, b) => a.localeCompare(b, "sv"))];
+}
+
 export function inferMealType(category?: string, name?: string): string | undefined {
   const haystack = `${category ?? ""} ${name ?? ""}`.toLowerCase();
   for (const [meal, words] of Object.entries(MEAL_KEYWORDS) as [

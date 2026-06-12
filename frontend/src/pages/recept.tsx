@@ -25,6 +25,7 @@ import {
   DIET_TAGS,
   MEAL_TYPES,
   SORT_OPTIONS,
+  recipeMatchesMeal,
   type MealTypeId,
   type SortId,
 } from "@/lib/recipe-taxonomy";
@@ -152,7 +153,7 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
     const list = allRecipes.filter((recipe) => {
       if (!recipeMatchesSearch(recipe, searchTerm)) return false;
       if (hasActiveSearch) return true;
-      if (mealFilter !== "alla" && recipe.mealType !== mealFilter) return false;
+      if (!recipeMatchesMeal(recipe, mealFilter)) return false;
       if (dietFilter) {
         const tags = (recipe.tags ?? []).map((t) => t.toLowerCase());
         const cat = (recipe.category ?? "").toLowerCase();
