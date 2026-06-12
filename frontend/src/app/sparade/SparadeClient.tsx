@@ -1,54 +1,48 @@
-import React, { useMemo, useState } from "react";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import RecipeImage from "@/app/components/RecipeImage";
+import RecipeListSkeleton from "@/app/components/RecipeListSkeleton";
 import {
   Recipe,
   mergeRecipes,
-  normalizeRecipe,
   recipeImage,
   saveLocalRecipeCopy,
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { useLocalRecipes } from "@/lib/use-local-recipes";
-import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
+import { fetchRecipeList, peekRecipeList } from "@/lib/recipe-list-cache";
 
-type Props = {
-  recipes: Recipe[];
-};
-
-export async function getServerSideProps() {
-  try {
-    const recipes = await listRecipesForServer();
-    return {
-      props: {
-        recipes: recipes.map(normalizeRecipe),
-      },
-    };
-  } catch {
-    return {
-      props: { recipes: [] },
-    };
-  }
-}
-
-const SparadePage = ({ recipes }: Props) => {
+const SparadeClient = () => {
+  const cached = peekRecipeList();
+  const [recipes, setRecipes] = useState<Recipe[]>(cached ?? []);
+  const [isLoading, setIsLoading] = useState(!cached);
   const localRecipes = useLocalRecipes();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const isLoggedIn = useLoggedIn();
 
-  React.useEffect(() => {
-    if (!isLoggedIn) {
-      return;
-    }
-    (async () => {
+  useEffect(() => {
+    let cancelled = false;
+    void fetchRecipeList().then((list) => {
+      if (!cancelled) {
+        setRecipes(list);
+        setIsLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    void (async () => {
       try {
         const response = await fetch("/api/favorites", { credentials: "include" });
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
         const data = await response.json();
         setFavoriteIds(Array.isArray(data.recipeIds) ? data.recipeIds : []);
       } catch {
@@ -71,18 +65,14 @@ const SparadePage = ({ recipes }: Props) => {
   );
 
   const onToggleFavorite = (recipeId: string) => {
-    if (!isLoggedIn) {
-      return;
-    }
-    (async () => {
+    if (!isLoggedIn) return;
+    void (async () => {
       try {
         const response = await fetch(`/api/favorites/${recipeId}`, {
           method: "DELETE",
           credentials: "include",
         });
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
         setFavoriteIds((current) => current.filter((id) => id !== recipeId));
       } catch {
         // ignore
@@ -91,18 +81,12 @@ const SparadePage = ({ recipes }: Props) => {
   };
 
   const onCreateMyVersion = (recipe: Recipe) => {
-    if (!isLoggedIn) {
-      return;
-    }
-    saveLocalRecipeCopy(recipe, {
-      ownerUserId: getStoredUser()?.id,
-    });
+    if (!isLoggedIn) return;
+    saveLocalRecipeCopy(recipe, { ownerUserId: getStoredUser()?.id });
   };
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
-
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
         <section className="max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-700">
@@ -117,7 +101,9 @@ const SparadePage = ({ recipes }: Props) => {
           </p>
         </section>
 
-        {!isLoggedIn ? (
+        {isLoading ? (
+          <RecipeListSkeleton count={3} />
+        ) : !isLoggedIn ? (
           <section className="mt-8 rounded-lg border border-dashed border-stone-300 bg-white p-8 text-center">
             <h2 className="text-xl font-bold text-stone-950">Logga in för sparade recept</h2>
             <p className="mt-2 text-stone-600">
@@ -195,4 +181,4 @@ const SparadePage = ({ recipes }: Props) => {
   );
 };
 
-export default SparadePage;
+export default SparadeClient;

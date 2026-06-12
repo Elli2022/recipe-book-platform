@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { resolveRecipeImageForServer } from "@/lib/supabase/embedded-recipe-images";
-import { recipeRowToClient, type RecipeRow } from "@/lib/supabase/recipes-map";
+import { recipeRowToListClient, type RecipeRow } from "@/lib/supabase/recipes-map";
 
 /** Server-only recipe list (SSR / API). Avoids self-fetch to /api on Netlify. */
 export async function listRecipesForServer() {
@@ -12,7 +12,7 @@ export async function listRecipesForServer() {
   const { data, error } = await supabase
     .from("recipes")
     .select(
-      "id,owner_name,name,description,portions,category,ingredients,instructions,image,source_image,created_at"
+      "id,owner_name,name,description,portions,category,ingredients,image,source_image,created_at"
     )
     .order("created_at", { ascending: false });
 
@@ -27,5 +27,5 @@ export async function listRecipesForServer() {
     source_image: row.source_image ?? "",
   })) as RecipeRow[];
 
-  return rows.map(recipeRowToClient);
+  return rows.map(recipeRowToListClient);
 }

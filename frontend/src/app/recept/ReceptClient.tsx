@@ -1,48 +1,38 @@
+"use client";
+
 import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import type { GetServerSideProps } from "next";
-import Navbar from "@/app/components/Navbar";
+import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
 import RecipeBrowseControls from "@/app/components/RecipeBrowseControls";
+import RecipeBrowsePageLayout from "@/app/components/RecipeBrowsePageLayout";
 import RecipeCard from "@/app/components/RecipeCard";
 import RecipeImage from "@/app/components/RecipeImage";
+import RecipeListSkeleton from "@/app/components/RecipeListSkeleton";
 import {
   Recipe,
   RecipeDraft,
-  enrichRecipe,
   mergeRecipes,
   normalizeRecipe,
-  recipeMatchesSearch,
   saveLocalRecipe,
   saveLocalRecipeCopy,
-  sortRecipes,
 } from "@/lib/recipes";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { useLocalRecipes } from "@/lib/use-local-recipes";
-import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 import {
-  MEAL_TYPES,
-  recipeMatchesDiet,
-  recipeMatchesMeal,
-  type DietTagId,
-  type MealTypeId,
-  type SortId,
-} from "@/lib/recipe-taxonomy";
+  fetchRecipeList,
+  peekRecipeList,
+  prependRecipeToList,
+} from "@/lib/recipe-list-cache";
+import { prefetchRecipeDetail } from "@/lib/recipe-prefetch";
+import { useRecipeBrowseFilters } from "@/lib/use-recipe-browse-filters";
+import type { MealTypeId } from "@/lib/recipe-taxonomy";
 
-type Props = {
-  recipes: Recipe[];
-  initialSearch: string;
-  initialMeal: MealTypeId;
+type ReceptClientProps = {
+  initialSearch?: string;
+  initialMeal?: MealTypeId;
 };
-
-function mealFromQuery(value: string | string[] | undefined): MealTypeId {
-  if (typeof value === "string" && MEAL_TYPES.some((meal) => meal.id === value)) {
-    return value as MealTypeId;
-  }
-  return "alla";
-}
 
 const emptyDraft: RecipeDraft = {
   name: "",
@@ -55,83 +45,37 @@ const emptyDraft: RecipeDraft = {
   imageDataUrl: "",
 };
 
-export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
-  const initialSearch =
-    typeof context.query.search === "string" ? context.query.search : "";
-  const initialMeal = initialSearch.trim()
-    ? "alla"
-    : mealFromQuery(context.query.meal);
-
-  try {
-    const recipes = await listRecipesForServer();
-    return {
-      props: {
-        recipes: recipes.map(normalizeRecipe).map(enrichRecipe),
-        initialSearch,
-        initialMeal,
-      },
-    };
-  } catch {
-    return {
-      props: {
-        recipes: [],
-        initialSearch,
-        initialMeal,
-      },
-    };
-  }
-};
-
-const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
+const ReceptClient = ({
+  initialSearch = "",
+  initialMeal = "alla",
+}: ReceptClientProps) => {
   const router = useRouter();
-  const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>(recipes);
+  const cached = peekRecipeList();
+  const [remoteRecipes, setRemoteRecipes] = useState<Recipe[]>(cached ?? []);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(!cached);
   const localRecipes = useLocalRecipes();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [mealFilter, setMealFilter] = useState<MealTypeId>(initialMeal);
-  const [dietFilter, setDietFilter] = useState<DietTagId | null>(null);
-  const [sortBy, setSortBy] = useState<SortId>("newest");
   const [draft, setDraft] = useState<RecipeDraft>(emptyDraft);
   const [formStatus, setFormStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const isLoggedIn = useLoggedIn();
   const [heartLoadingId, setHeartLoadingId] = useState<string | null>(null);
 
-  const prefetchRecipeDetail = (recipeId: string) => {
-    router.prefetch(`/recept/${recipeId}`);
-    void fetch(`/api/recipes/${recipeId}?fields=basic`, {
-      credentials: "include",
-    });
-  };
-
   useEffect(() => {
-    const syncFromUrl = (url: string) => {
-      const query = url.split("?")[1] ?? "";
-      const params = new URLSearchParams(query);
-      const q = params.get("search");
-      const meal = params.get("meal");
-
-      if (q) {
-        setSearchTerm(q);
-        setMealFilter("alla");
-        setDietFilter(null);
-        return;
-      }
-
-      setSearchTerm("");
-      setMealFilter(mealFromQuery(meal ?? undefined));
-    };
-
-    const onRouteChange = (url: string) => syncFromUrl(url);
-    router.events.on("routeChangeComplete", onRouteChange);
+    let cancelled = false;
+    void fetchRecipeList().then((recipes) => {
+      if (cancelled) return;
+      setRemoteRecipes(recipes);
+      setIsLoadingRecipes(false);
+    });
     return () => {
-      router.events.off("routeChangeComplete", onRouteChange);
+      cancelled = true;
     };
-  }, [router.events]);
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    (async () => {
+    void (async () => {
       try {
         const response = await fetch("/api/favorites", { credentials: "include" });
         if (!response.ok) return;
@@ -144,21 +88,22 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
   }, [isLoggedIn]);
 
   const allRecipes = useMemo(
-    () => mergeRecipes(localRecipes, remoteRecipes).map(enrichRecipe),
+    () => mergeRecipes(localRecipes, remoteRecipes),
     [localRecipes, remoteRecipes]
   );
 
-  const hasActiveSearch = searchTerm.trim().length > 0;
-
-  const filteredRecipes = useMemo(() => {
-    const list = allRecipes.filter((recipe) => {
-      if (!recipeMatchesSearch(recipe, searchTerm)) return false;
-      if (hasActiveSearch) return true;
-      if (!recipeMatchesMeal(recipe, mealFilter)) return false;
-      return recipeMatchesDiet(recipe, dietFilter);
-    });
-    return sortRecipes(list, sortBy);
-  }, [allRecipes, searchTerm, hasActiveSearch, mealFilter, dietFilter, sortBy]);
+  const {
+    searchTerm,
+    mealFilter,
+    dietFilter,
+    sortBy,
+    hasActiveSearch,
+    filteredRecipes,
+    onSearchChange,
+    setMealFilter,
+    onDietFilterChange,
+    setSortBy,
+  } = useRecipeBrowseFilters(allRecipes, { initialSearch, initialMeal });
 
   const onDraftChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -221,7 +166,11 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
 
         if (response.ok) {
           const savedRecipe = normalizeRecipe(await response.json());
-          setRemoteRecipes((current) => [enrichRecipe(savedRecipe), ...current]);
+          prependRecipeToList(savedRecipe);
+          setRemoteRecipes((current) => [
+            savedRecipe,
+            ...current.filter((item) => item._id !== savedRecipe._id),
+          ]);
           setFormStatus("Receptet sparades.");
           resetDraft();
           return;
@@ -248,7 +197,7 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
     const isAlreadyFavorite = favoriteIds.includes(recipeId);
     setHeartLoadingId(recipeId);
 
-    (async () => {
+    void (async () => {
       try {
         if (isAlreadyFavorite) {
           const response = await fetch(`/api/favorites/${recipeId}`, {
@@ -285,120 +234,109 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
     const localCopy = saveLocalRecipeCopy(recipe, {
       ownerUserId: getStoredUser()?.id,
     });
-    window.location.href = `/recept/${localCopy._id}`;
+    router.push(`/recept/${localCopy._id}`);
   };
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
-
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
-        <header className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-wide text-rose-700">
-            Hitta recept
-          </p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-stone-950 sm:text-5xl">
-            Din receptsamling
-          </h1>
-          <p className="mt-3 max-w-2xl text-lg text-stone-600">
-            Sök, filtrera och spara favoriter — inspirerat av recept.se, byggt för
-            din egen bok.
-          </p>
-
-          <div className="mt-6 space-y-4">
-            <RecipeBrowseControls
-              searchTerm={searchTerm}
-              onSearchChange={(value) => {
-                setSearchTerm(value);
-                if (value.trim()) {
-                  setMealFilter("alla");
-                  setDietFilter(null);
-                }
-              }}
-              mealFilter={mealFilter}
-              onMealFilterChange={setMealFilter}
-              dietFilter={dietFilter}
-              onDietFilterChange={setDietFilter}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              showSort
-            />
-            {isLoggedIn ? (
-              <Link
-                href="#nytt-recept"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-rose-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-rose-800"
-              >
-                + Nytt recept
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white hover:bg-stone-700"
-              >
-                Logga in
-              </Link>
-            )}
-          </div>
-        </header>
-
+      <RecipeBrowsePageLayout
+        title="Din receptsamling"
+        description="Sök, filtrera och spara favoriter — inspirerat av recept.se, byggt för din egen bok."
+        controls={
+          <RecipeBrowseControls
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+            mealFilter={mealFilter}
+            onMealFilterChange={setMealFilter}
+            dietFilter={dietFilter}
+            onDietFilterChange={onDietFilterChange}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            showSort
+          />
+        }
+        headerActions={
+          isLoggedIn ? (
+            <Link
+              href="#nytt-recept"
+              className="inline-flex h-12 items-center justify-center rounded-full bg-rose-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-rose-800"
+            >
+              + Nytt recept
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex h-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white hover:bg-stone-700"
+            >
+              Logga in
+            </Link>
+          )
+        }
+      >
         {formStatus && (
           <p className="mt-4 text-sm font-medium text-stone-700">{formStatus}</p>
         )}
 
         <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-sm text-stone-500">{filteredRecipes.length} recept</p>
-          {hasActiveSearch && (
+          {!isLoadingRecipes && (
+            <p className="text-sm text-stone-500">{filteredRecipes.length} recept</p>
+          )}
+          {hasActiveSearch && !isLoadingRecipes && (
             <p className="text-sm text-stone-500">
               Söker i alla recept (filter ignoreras)
             </p>
           )}
         </div>
 
-        <section className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              key={recipe._id}
-              recipe={recipe}
-              href={`/recept/${recipe._id}`}
-              onPrefetch={() => prefetchRecipeDetail(recipe._id)}
-              footer={
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => onToggleFavorite(recipe._id)}
-                    disabled={heartLoadingId === recipe._id}
-                    aria-label={
-                      favoriteIds.includes(recipe._id)
-                        ? "Ta bort favorit"
-                        : "Spara favorit"
-                    }
-                    className={`text-2xl transition disabled:opacity-50 ${
-                      favoriteIds.includes(recipe._id)
-                        ? "text-rose-600"
-                        : "text-stone-400 hover:text-rose-500"
-                    }`}
-                  >
-                    {favoriteIds.includes(recipe._id) ? "♥" : "♡"}
-                  </button>
-                  {favoriteIds.includes(recipe._id) && (
+        {isLoadingRecipes ? (
+          <RecipeListSkeleton />
+        ) : (
+          <section className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredRecipes.map((recipe) => (
+              <RecipeCard
+                key={recipe._id}
+                recipe={recipe}
+                href={`/recept/${recipe._id}`}
+                onPrefetch={() => prefetchRecipeDetail(router, recipe)}
+                footer={
+                  <div className="flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() => onCreateMyVersion(recipe)}
-                      className="rounded-full border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 transition hover:border-rose-700 hover:text-rose-800"
+                      onClick={() => onToggleFavorite(recipe._id)}
+                      disabled={heartLoadingId === recipe._id}
+                      aria-label={
+                        favoriteIds.includes(recipe._id)
+                          ? "Ta bort favorit"
+                          : "Spara favorit"
+                      }
+                      className={`text-2xl transition disabled:opacity-50 ${
+                        favoriteIds.includes(recipe._id)
+                          ? "text-rose-600"
+                          : "text-stone-400 hover:text-rose-500"
+                      }`}
                     >
-                      Egen version
+                      {favoriteIds.includes(recipe._id) ? "♥" : "♡"}
                     </button>
-                  )}
-                  {recipe.localOnly && (
-                    <span className="text-xs font-medium text-amber-700">Lokalt</span>
-                  )}
-                </div>
-              }
-            />
-          ))}
-        </section>
+                    {favoriteIds.includes(recipe._id) && (
+                      <button
+                        type="button"
+                        onClick={() => onCreateMyVersion(recipe)}
+                        className="rounded-full border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 transition hover:border-rose-700 hover:text-rose-800"
+                      >
+                        Egen version
+                      </button>
+                    )}
+                    {recipe.localOnly && (
+                      <span className="text-xs font-medium text-amber-700">Lokalt</span>
+                    )}
+                  </div>
+                }
+              />
+            ))}
+          </section>
+        )}
 
-        {filteredRecipes.length === 0 && (
+        {!isLoadingRecipes && filteredRecipes.length === 0 && (
           <section className="mt-8 rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
             <h2 className="text-xl font-bold text-stone-950">Inga recept hittades</h2>
             <p className="mt-2 text-stone-600">
@@ -554,11 +492,11 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
             </div>
           </form>
         </section>
-      </main>
+      </RecipeBrowsePageLayout>
 
       <Footer />
     </div>
   );
 };
 
-export default ReceptPage;
+export default ReceptClient;

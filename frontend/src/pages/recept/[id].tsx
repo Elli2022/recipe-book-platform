@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import RecipeDetailSkeleton from "@/app/components/RecipeDetailSkeleton";
 import RecipeImage from "@/app/components/RecipeImage";
 import {
   Recipe,
@@ -11,6 +11,11 @@ import {
   recipeImage,
   updateLocalRecipe,
 } from "@/lib/recipes";
+import {
+  fetchRecipeBasic,
+  peekRecipeDetail,
+  recipeNeedsMediaFetch,
+} from "@/lib/recipe-detail-cache";
 import { getStoredUser } from "@/lib/auth/local-user";
 import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { RecipeAttribution } from "@/lib/recipe-attribution";
@@ -42,82 +47,64 @@ const ReceptDetalj = () => {
 
     const ac = new AbortController();
 
+    const applyMedia = (media: { image?: string; source_image?: string }) => {
+      const resolvedImage = typeof media.image === "string" ? media.image.trim() : "";
+      if (!resolvedImage) return;
+      setRecipe((current) =>
+        current && current._id === id
+          ? {
+              ...current,
+              image: resolvedImage,
+              source_image:
+                typeof media.source_image === "string"
+                  ? media.source_image
+                  : current.source_image,
+            }
+          : current
+      );
+    };
+
+    const loadMedia = async () => {
+      try {
+        const mediaRes = await fetch(`/api/recipes/${id}?fields=media`, {
+          credentials: "include",
+          signal: ac.signal,
+        });
+        if (mediaRes.ok) applyMedia(await mediaRes.json());
+      } catch {
+        // valfri bild
+      }
+    };
+
+    const showRecipe = (next: Recipe) => {
+      setRecipe(next);
+      setEditMode(false);
+      setCheckedSteps({});
+      setIsLoading(false);
+      if (recipeNeedsMediaFetch(next)) void loadMedia();
+    };
+
     const loadRecipe = async () => {
       setIsLoading(true);
       setError("");
-
       const localRecipe = getLocalRecipes().find((item) => item._id === id);
       if (localRecipe) {
-        setRecipe(localRecipe);
-        setCheckedSteps({});
-        setIsLoading(false);
+        showRecipe(localRecipe);
         return;
       }
-
+      const cached = peekRecipeDetail(id);
+      if (cached) {
+        showRecipe(cached);
+        return;
+      }
       try {
-        const basicRes = await fetch(`/api/recipes/${id}?fields=basic`, {
-          credentials: "include",
-          signal: ac.signal,
-        });
-
-        if (basicRes.ok) {
-          setRecipe(normalizeRecipe(await basicRes.json()));
-          setEditMode(false);
-          setCheckedSteps({});
-
-          try {
-            const mediaRes = await fetch(`/api/recipes/${id}?fields=media`, {
-              credentials: "include",
-              signal: ac.signal,
-            });
-            if (mediaRes.ok) {
-              const media = (await mediaRes.json()) as {
-                image?: string;
-                source_image?: string;
-              };
-              setRecipe((current) =>
-                current && current._id === id
-                  ? {
-                      ...current,
-                      image:
-                        typeof media.image === "string" ? media.image : current.image,
-                      source_image:
-                        typeof media.source_image === "string"
-                          ? media.source_image
-                          : current.source_image,
-                    }
-                  : current
-              );
-            }
-          } catch {
-            // valfri bild — ignorera om avbruten eller nätverksfel
-          }
-
-          return;
-        }
-
-        if (basicRes.status === 404) {
-          throw new Error("Receptet kunde inte hämtas.");
-        }
-
-        const fullRes = await fetch(`/api/recipes/${id}`, {
-          credentials: "include",
-          signal: ac.signal,
-        });
-
-        if (!fullRes.ok) {
-          throw new Error("Receptet kunde inte hämtas.");
-        }
-
-        setRecipe(normalizeRecipe(await fullRes.json()));
-        setEditMode(false);
-        setCheckedSteps({});
+        const basicRecipe = await fetchRecipeBasic(id);
+        if (ac.signal.aborted) return;
+        if (!basicRecipe) throw new Error("Receptet kunde inte hämtas.");
+        showRecipe(basicRecipe);
       } catch (e) {
-        if (e instanceof DOMException && e.name === "AbortError") {
-          return;
-        }
+        if (e instanceof DOMException && e.name === "AbortError") return;
         setError("Receptet kunde inte hittas.");
-      } finally {
         setIsLoading(false);
       }
     };
@@ -209,22 +196,12 @@ const ReceptDetalj = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-stone-50">
-        <Navbar />
-        <main className="mx-auto max-w-4xl px-4 py-16">
-          <p className="rounded-lg border border-stone-200 bg-white p-6 text-stone-700">
-            Laddar recept...
-          </p>
-        </main>
-      </div>
-    );
+    return <RecipeDetailSkeleton />;
   }
 
   if (error || !recipe) {
     return (
       <div className="min-h-screen bg-stone-50">
-        <Navbar />
         <main className="mx-auto max-w-4xl px-4 py-16">
           <div className="rounded-lg border border-stone-200 bg-white p-6">
             <h1 className="text-2xl font-bold text-stone-950">Receptet saknas</h1>
@@ -279,8 +256,6 @@ const ReceptDetalj = () => {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
-
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
         <Link href="/recept" className="text-sm font-semibold text-emerald-700">
           Tillbaka till recept
@@ -292,6 +267,7 @@ const ReceptDetalj = () => {
               src={recipeImage(recipe)}
               alt={recipe.name}
               className="h-[420px] w-full object-cover"
+              priority
             />
           </div>
 

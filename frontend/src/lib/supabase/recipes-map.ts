@@ -28,6 +28,13 @@ export function recipeRowToClient(row: RecipeRow) {
   };
 }
 
+/** Lightweight list row — omits instructions for smaller /api/recipes payloads. */
+export function recipeRowToListClient(
+  row: Omit<RecipeRow, "instructions"> & { instructions?: string[] | null }
+) {
+  return { ...recipeRowToClient({ ...row, instructions: [] } as RecipeRow), instructions: [] };
+}
+
 const toStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {
     return value.map(String).map((item) => item.trim()).filter(Boolean);
