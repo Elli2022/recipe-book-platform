@@ -61,7 +61,7 @@ export function RecipeAttribution({
               href={sourceHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-emerald-700 underline hover:text-emerald-800"
+              className="font-medium text-rose-700 underline hover:text-rose-800"
             >
               {sourceLabel}
             </a>

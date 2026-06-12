@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "Cache-Control",
         "public, s-maxage=120, stale-while-revalidate=300"
       );
+      res.setHeader("Netlify-Vary", "query=fields");
 
       if (fields === "media") {
         const { data, error } = await supabase.rpc("get_public_recipe_media", {

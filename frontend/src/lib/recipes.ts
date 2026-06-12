@@ -1,4 +1,5 @@
 import { inferMealType } from "@/lib/recipe-taxonomy";
+import { EMBEDDED_RECIPE_IMAGE_BY_ID } from "@/lib/supabase/embedded-recipe-images";
 
 export type Recipe = {
   _id: string;
@@ -74,10 +75,14 @@ export const normalizeRecipe = (recipe: any): Recipe => ({
     : null,
 });
 
-export const recipeImage = (recipe: Recipe) =>
-  recipe.image && recipe.image.trim().length > 0
-    ? recipe.image
-    : "/images/heroImageLandingPage.jpg";
+export const recipeImage = (recipe: Recipe) => {
+  const embedded = recipe._id ? EMBEDDED_RECIPE_IMAGE_BY_ID[recipe._id] : "";
+  if (embedded) {
+    return embedded;
+  }
+  const image = recipe.image?.trim() ?? "";
+  return image || "/images/heroImageLandingPage.jpg";
+};
 
 export const recipeMatchesSearch = (recipe: Recipe, searchTerm: string) => {
   const query = searchTerm.trim().toLowerCase();

@@ -208,7 +208,7 @@ const ReceptDetalj = () => {
             <p className="mt-2 text-stone-600">{error}</p>
             <Link
               href="/recept"
-              className="mt-5 inline-flex rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white"
+              className="mt-5 inline-flex rounded-full bg-rose-700 px-5 py-3 text-sm font-semibold text-white"
             >
               Till alla recept
             </Link>
@@ -257,7 +257,7 @@ const ReceptDetalj = () => {
   return (
     <div className="min-h-screen bg-stone-50">
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
-        <Link href="/recept" className="text-sm font-semibold text-emerald-700">
+        <Link href="/recept" className="text-sm font-semibold text-rose-700">
           Tillbaka till recept
         </Link>
 
@@ -273,7 +273,7 @@ const ReceptDetalj = () => {
 
           <div>
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">
+              <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-800">
                 {recipe.category || "Okategoriserat"}
               </span>
               {recipe.localOnly && (
@@ -318,13 +318,13 @@ const ReceptDetalj = () => {
               type="button"
               onClick={toggleFavorite}
               disabled={!isLoggedIn}
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-stone-300 bg-white px-6 text-sm font-semibold text-stone-800 shadow-sm transition hover:border-emerald-700 hover:text-emerald-800"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-stone-300 bg-white px-6 text-sm font-semibold text-stone-800 shadow-sm transition hover:border-rose-700 hover:text-rose-800"
             >
               {isFavorite ? "♥ Sparad" : "♡ Spara recept"}
             </button>
             {!isLoggedIn && (
               <p className="mt-2 text-sm text-stone-600">
-                <Link href="/login" className="font-semibold text-emerald-700 underline">
+                <Link href="/login" className="font-semibold text-rose-700 underline">
                   Logga in
                 </Link>{" "}
                 för att spara favoriter.
@@ -346,7 +346,7 @@ const ReceptDetalj = () => {
                     <button
                       type="button"
                       onClick={saveEdit}
-                      className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                      className="rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white"
                     >
                       Spara ändringar
                     </button>
@@ -366,7 +366,7 @@ const ReceptDetalj = () => {
                 Baseras på originalreceptet:{" "}
                 <Link
                   href={`/recept/${recipe.originalRecipeId}`}
-                  className="font-semibold text-emerald-700 underline"
+                  className="font-semibold text-rose-700 underline"
                 >
                   visa original
                 </Link>
@@ -452,7 +452,7 @@ const ReceptDetalj = () => {
                     key={`${instruction}-${index}`}
                     className={`flex gap-4 rounded-md border p-4 transition ${
                       checkedSteps[index]
-                        ? "border-emerald-200 bg-emerald-50 text-stone-500"
+                        ? "border-rose-200 bg-rose-50 text-stone-500"
                         : "border-stone-200 bg-white text-stone-800"
                     }`}
                   >
@@ -460,7 +460,7 @@ const ReceptDetalj = () => {
                       type="checkbox"
                       checked={Boolean(checkedSteps[index])}
                       onChange={() => toggleStep(index)}
-                      className="mt-1 h-5 w-5 accent-emerald-700"
+                      className="mt-1 h-5 w-5 accent-rose-700"
                     />
                     <span>
                       <span className="mb-1 block text-sm font-semibold text-stone-500">
