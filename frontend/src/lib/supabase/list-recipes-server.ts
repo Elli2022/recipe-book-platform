@@ -4,10 +4,17 @@ import { recipeRowToClient, type RecipeRow } from "@/lib/supabase/recipes-map";
 const MARIA_RECIPE_ID = "f3051ec7-e4bc-4824-bad3-57f7941dabb0";
 const JASMINA_RECIPE_ID = "b8c4e2f1-6a3d-4f5e-9c2b-1d8e7f6a5b4c";
 const ELLIS_LASAGNE_RECIPE_ID = "9f555b7e-6322-44d7-ae67-5b04355f2481";
+const KOTTBULLAR_RECIPE_ID = "580be8ad-8d58-48b2-b8a6-29e69d58f6f4";
+const GULLS_CHOKLADKAKA_RECIPE_ID = "5e4c5d19-27d7-48d1-a5c0-a8ce07c42c29";
 const MARIA_ARLA_IMAGE_URL =
   "https://images.arla.com/recordid/F3051EC7-E4BC-4824-BAD357F7941DABBB/glutenfri-kladdkaka.jpg";
-const JASMINA_LIST_IMAGE_PATH = "/images/jasminas-halloumisallad.jpg";
-const ELLIS_LASAGNE_LIST_IMAGE_PATH = "/images/ellis-vegetariska-lasagne.jpg";
+
+const EMBEDDED_LIST_IMAGE_IDS = new Set([
+  JASMINA_RECIPE_ID,
+  ELLIS_LASAGNE_RECIPE_ID,
+  KOTTBULLAR_RECIPE_ID,
+  GULLS_CHOKLADKAKA_RECIPE_ID,
+]);
 
 const imageForList = (row: Partial<RecipeRow>) => {
   const image = row.image ?? "";
@@ -18,8 +25,7 @@ const imageForList = (row: Partial<RecipeRow>) => {
     if (row.id === MARIA_RECIPE_ID) {
       return MARIA_ARLA_IMAGE_URL;
     }
-    // Egna foton: behåll inbäddad bild tills Netlify har filen i public/
-    if (row.id === JASMINA_RECIPE_ID || row.id === ELLIS_LASAGNE_RECIPE_ID) {
+    if (row.id && EMBEDDED_LIST_IMAGE_IDS.has(row.id)) {
       return image;
     }
     return "";
