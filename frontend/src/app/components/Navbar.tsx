@@ -2,31 +2,19 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { AUTH_CHANGE_EVENT, getStoredUser, notifyAuthChange } from "@/lib/auth/local-user";
+import { notifyAuthChange } from "@/lib/auth/local-user";
+import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { useActivePathname } from "@/lib/use-active-pathname";
 
 const Navbar = () => {
   const pathname = useActivePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isLoggedIn = useLoggedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  React.useEffect(() => {
-    const sync = () => setIsLoggedIn(Boolean(getStoredUser()));
-    const timer = window.setTimeout(sync, 0);
-    window.addEventListener(AUTH_CHANGE_EVENT, sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener(AUTH_CHANGE_EVENT, sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
   const onLogout = () => {
     window.localStorage.removeItem("receptbok.user");
-    setIsLoggedIn(false);
     notifyAuthChange();
     window.location.href = "/";
   };
@@ -82,6 +70,7 @@ const Navbar = () => {
               href={link.href}
               className={linkClass(link.href)}
               onClick={closeMenu}
+              prefetch={link.href === "/" ? false : undefined}
             >
               {link.label}
             </Link>

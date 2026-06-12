@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import Footer from "./components/Footer";
-import Navbar from "./components/Navbar";
 import RecipeCard from "./components/RecipeCard";
 import { Recipe } from "@/lib/recipes";
 import { MEAL_TYPES } from "@/lib/recipe-taxonomy";
@@ -29,8 +28,6 @@ const HomeClient = ({ latestRecipes, totalCount }: HomeClientProps) => {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <Navbar />
-
       <main>
         <section className="relative overflow-hidden border-b border-stone-200 bg-stone-900">
           <Image

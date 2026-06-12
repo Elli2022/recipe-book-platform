@@ -12,7 +12,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           name="description"
           content="En personlig receptbok för att hitta, spara och laga favoritrecept."
         />
-        <meta name="theme-color" content="#047857" />
+        <meta name="theme-color" content="#be123c" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

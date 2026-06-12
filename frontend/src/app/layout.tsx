@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Navbar from "./components/Navbar";
 import PwaRegistrar from "./components/PwaRegistrar";
 import "./globals.css";
 
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#047857",
+  themeColor: "#be123c",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -58,6 +59,7 @@ export default function RootLayout({
     <html lang="sv">
       <body>
         <PwaRegistrar />
+        <Navbar />
         {children}
       </body>
     </html>
