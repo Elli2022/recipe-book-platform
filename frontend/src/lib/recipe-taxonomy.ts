@@ -27,6 +27,8 @@ export const DIET_TAGS = [
   { id: "snabbt", label: "Snabbt (< 30 min)" },
 ] as const;
 
+export type DietTagId = (typeof DIET_TAGS)[number]["id"];
+
 const MEAL_KEYWORDS: Record<Exclude<MealTypeId, "alla">, string[]> = {
   frukost: ["frukost", "morgon", "gröt", "pannkaka"],
   lunch: ["lunch", "sallad", "soppa"],
@@ -58,6 +60,35 @@ export function recipeMatchesCategory(recipe: Recipe, category: string) {
     .filter(Boolean);
 
   return parts.includes(selected) || parts.some((part) => part.includes(selected));
+}
+
+export function recipeMatchesDiet(recipe: Recipe, dietFilter: DietTagId | null) {
+  if (!dietFilter) {
+    return true;
+  }
+
+  const tags = (recipe.tags ?? []).map((tag) => tag.toLowerCase());
+  const category = (recipe.category ?? "").toLowerCase();
+  const name = recipe.name.toLowerCase();
+
+  if (dietFilter === "vegetariskt") {
+    return (
+      tags.includes("vegetariskt") ||
+      category.includes("vegetar") ||
+      name.includes("vegetar")
+    );
+  }
+  if (dietFilter === "veganskt") {
+    return tags.includes("veganskt") || category.includes("vegan");
+  }
+  if (dietFilter === "glutenfritt") {
+    return tags.includes("glutenfritt") || category.includes("gluten");
+  }
+  if (dietFilter === "snabbt") {
+    return (recipe.prepTimeMinutes ?? 999) <= 30;
+  }
+
+  return true;
 }
 
 export function recipeMatchesMeal(recipe: Recipe, mealFilter: MealTypeId) {

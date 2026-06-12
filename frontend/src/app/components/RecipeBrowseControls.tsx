@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  DIET_TAGS,
   MEAL_TYPES,
   SORT_OPTIONS,
+  type DietTagId,
   type MealTypeId,
   type SortId,
 } from "@/lib/recipe-taxonomy";
@@ -12,17 +14,28 @@ type RecipeBrowseControlsProps = {
   onSearchChange: (value: string) => void;
   mealFilter: MealTypeId;
   onMealFilterChange: (value: MealTypeId) => void;
+  dietFilter?: DietTagId | null;
+  onDietFilterChange?: (value: DietTagId | null) => void;
   sortBy?: SortId;
   onSortChange?: (value: SortId) => void;
   searchId?: string;
   showSort?: boolean;
 };
 
+const chipClass = (active: boolean) =>
+  `rounded-full px-4 py-2 text-sm font-medium transition ${
+    active
+      ? "bg-rose-700 text-white shadow-sm"
+      : "border border-stone-300 bg-white text-stone-700 hover:border-rose-300"
+  }`;
+
 const RecipeBrowseControls = ({
   searchTerm,
   onSearchChange,
   mealFilter,
   onMealFilterChange,
+  dietFilter = null,
+  onDietFilterChange,
   sortBy = "newest",
   onSortChange,
   searchId = "recipe-search",
@@ -70,16 +83,29 @@ const RecipeBrowseControls = ({
             key={meal.id}
             type="button"
             onClick={() => onMealFilterChange(meal.id)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              mealFilter === meal.id
-                ? "bg-rose-700 text-white shadow-sm"
-                : "border border-stone-300 bg-white text-stone-700 hover:border-rose-300"
-            }`}
+            className={chipClass(mealFilter === meal.id)}
           >
             {meal.label}
           </button>
         ))}
       </section>
+
+      {onDietFilterChange && (
+        <section className="mt-2 flex flex-wrap gap-2">
+          {DIET_TAGS.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() =>
+                onDietFilterChange(dietFilter === tag.id ? null : tag.id)
+              }
+              className={chipClass(dietFilter === tag.id)}
+            >
+              {tag.label}
+            </button>
+          ))}
+        </section>
+      )}
     </>
   );
 };

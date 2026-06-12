@@ -8,8 +8,11 @@ import RecipeBrowseControls from "./components/RecipeBrowseControls";
 import RecipeCard from "./components/RecipeCard";
 import { Recipe, recipeMatchesSearch, sortRecipes } from "@/lib/recipes";
 import {
+  DIET_TAGS,
   MEAL_TYPES,
+  recipeMatchesDiet,
   recipeMatchesMeal,
+  type DietTagId,
   type MealTypeId,
 } from "@/lib/recipe-taxonomy";
 
@@ -21,9 +24,11 @@ type HomeClientProps = {
 const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [mealFilter, setMealFilter] = useState<MealTypeId>("alla");
+  const [dietFilter, setDietFilter] = useState<DietTagId | null>(null);
   const deferredSearch = useDeferredValue(searchTerm);
   const hasActiveSearch = deferredSearch.trim().length > 0;
-  const hasActiveBrowse = hasActiveSearch || mealFilter !== "alla";
+  const hasActiveBrowse =
+    hasActiveSearch || mealFilter !== "alla" || dietFilter !== null;
 
   const filteredRecipes = useMemo(() => {
     const list = recipes.filter((recipe) => {
@@ -33,10 +38,13 @@ const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
       if (hasActiveSearch) {
         return true;
       }
-      return recipeMatchesMeal(recipe, mealFilter);
+      if (!recipeMatchesMeal(recipe, mealFilter)) {
+        return false;
+      }
+      return recipeMatchesDiet(recipe, dietFilter);
     });
     return sortRecipes(list, "newest");
-  }, [recipes, deferredSearch, hasActiveSearch, mealFilter]);
+  }, [recipes, deferredSearch, hasActiveSearch, mealFilter, dietFilter]);
 
   const visibleRecipes = hasActiveBrowse
     ? filteredRecipes
@@ -46,14 +54,17 @@ const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
     setSearchTerm(value);
     if (value.trim()) {
       setMealFilter("alla");
+      setDietFilter(null);
     }
   };
 
   const sectionTitle = hasActiveSearch
     ? `Sökresultat för “${deferredSearch.trim()}”`
-    : mealFilter !== "alla"
-      ? MEAL_TYPES.find((meal) => meal.id === mealFilter)?.label ?? "Filtrerat urval"
-      : "Recept att laga nu";
+    : dietFilter
+      ? DIET_TAGS.find((tag) => tag.id === dietFilter)?.label ?? "Filtrerat urval"
+      : mealFilter !== "alla"
+        ? MEAL_TYPES.find((meal) => meal.id === mealFilter)?.label ?? "Filtrerat urval"
+        : "Recept att laga nu";
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -100,6 +111,8 @@ const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
                 onSearchChange={onSearchChange}
                 mealFilter={mealFilter}
                 onMealFilterChange={setMealFilter}
+                dietFilter={dietFilter}
+                onDietFilterChange={setDietFilter}
               />
             </div>
           </header>
@@ -110,7 +123,7 @@ const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
               <p className="mt-1 text-sm text-stone-500">
                 {visibleRecipes.length}
                 {hasActiveBrowse ? "" : ` av ${totalCount}`} recept
-                {hasActiveSearch && " · söker i alla måltider"}
+                {hasActiveSearch && " · söker i alla recept (filter ignoreras)"}
               </p>
             </div>
             <Link
@@ -140,12 +153,13 @@ const HomeClient = ({ recipes, totalCount }: HomeClientProps) => {
           ) : (
             <div className="mt-6 rounded-2xl border border-dashed border-stone-300 bg-white p-8 text-center">
               <p className="text-stone-600">
-                Inga recept matchar ditt val. Prova en annan måltid eller sökning.
+                Inga recept matchar ditt val. Prova ett annat filter eller sökning.
               </p>
               <button
                 type="button"
                 onClick={() => {
                   setMealFilter("alla");
+                  setDietFilter(null);
                   setSearchTerm("");
                 }}
                 className="mt-4 inline-flex rounded-full bg-rose-700 px-5 py-3 text-sm font-semibold text-white"

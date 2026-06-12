@@ -23,10 +23,10 @@ import { useLoggedIn } from "@/lib/auth/use-logged-in";
 import { useLocalRecipes } from "@/lib/use-local-recipes";
 import { listRecipesForServer } from "@/lib/supabase/list-recipes-server";
 import {
-  DIET_TAGS,
   MEAL_TYPES,
-  SORT_OPTIONS,
+  recipeMatchesDiet,
   recipeMatchesMeal,
+  type DietTagId,
   type MealTypeId,
   type SortId,
 } from "@/lib/recipe-taxonomy";
@@ -89,7 +89,7 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [mealFilter, setMealFilter] = useState<MealTypeId>(initialMeal);
-  const [dietFilter, setDietFilter] = useState<string | null>(null);
+  const [dietFilter, setDietFilter] = useState<DietTagId | null>(null);
   const [sortBy, setSortBy] = useState<SortId>("newest");
   const [draft, setDraft] = useState<RecipeDraft>(emptyDraft);
   const [formStatus, setFormStatus] = useState("");
@@ -155,29 +155,7 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
       if (!recipeMatchesSearch(recipe, searchTerm)) return false;
       if (hasActiveSearch) return true;
       if (!recipeMatchesMeal(recipe, mealFilter)) return false;
-      if (dietFilter) {
-        const tags = (recipe.tags ?? []).map((t) => t.toLowerCase());
-        const cat = (recipe.category ?? "").toLowerCase();
-        const name = recipe.name.toLowerCase();
-        if (dietFilter === "vegetariskt") {
-          if (
-            !tags.includes("vegetariskt") &&
-            !cat.includes("vegetar") &&
-            !name.includes("vegetar")
-          ) {
-            return false;
-          }
-        } else if (dietFilter === "veganskt") {
-          if (!tags.includes("veganskt") && !cat.includes("vegan")) return false;
-        } else if (dietFilter === "glutenfritt") {
-          if (!tags.includes("glutenfritt") && !cat.includes("gluten")) {
-            return false;
-          }
-        } else if (dietFilter === "snabbt") {
-          if ((recipe.prepTimeMinutes ?? 999) > 30) return false;
-        }
-      }
-      return true;
+      return recipeMatchesDiet(recipe, dietFilter);
     });
     return sortRecipes(list, sortBy);
   }, [allRecipes, searchTerm, hasActiveSearch, mealFilter, dietFilter, sortBy]);
@@ -339,6 +317,8 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
               }}
               mealFilter={mealFilter}
               onMealFilterChange={setMealFilter}
+              dietFilter={dietFilter}
+              onDietFilterChange={setDietFilter}
               sortBy={sortBy}
               onSortChange={setSortBy}
               showSort
@@ -360,25 +340,6 @@ const ReceptPage = ({ recipes, initialSearch, initialMeal }: Props) => {
             )}
           </div>
         </header>
-
-        <section className="mt-3 flex flex-wrap gap-2">
-          {DIET_TAGS.map((tag) => (
-            <button
-              key={tag.id}
-              type="button"
-              onClick={() =>
-                setDietFilter((current) => (current === tag.id ? null : tag.id))
-              }
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                dietFilter === tag.id
-                  ? "border-rose-700 bg-rose-50 text-rose-800"
-                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"
-              }`}
-            >
-              {tag.label}
-            </button>
-          ))}
-        </section>
 
         {formStatus && (
           <p className="mt-4 text-sm font-medium text-stone-700">{formStatus}</p>
