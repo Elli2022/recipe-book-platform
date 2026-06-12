@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { resolveRecipeImageForServer } from "@/lib/supabase/embedded-recipe-images";
 import { createSupabasePagesApiClient } from "@/lib/supabase/pages-api-client";
 import {
   normalizeRecipePayload,
@@ -50,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const row = rows[0];
         return res.status(200).json({
-          image: row.image ?? "",
+          image: resolveRecipeImageForServer(id, row.image),
           source_image: row.source_image ?? "",
         });
       }
@@ -95,7 +96,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ message: "Receptet hittades inte." });
       }
 
-      return res.status(200).json(recipeRowToClient(rows[0]));
+      const row = rows[0];
+      return res.status(200).json(
+        recipeRowToClient({
+          ...row,
+          image: resolveRecipeImageForServer(id, row.image),
+        })
+      );
     }
 
     if (req.method === "PUT") {
