@@ -10,21 +10,24 @@ test.describe("Receptbok smoke", () => {
     await expect(page.getByLabel(/e-post/i)).toBeVisible();
   });
 
-  test("home loads hero and branding", async ({ page }) => {
+  test("home loads browse UI and branding", async ({ page }) => {
     await page.goto("/", { waitUntil: "load" });
     await expect(page.getByRole("link", { name: "Receptbok" })).toBeVisible({
       timeout: 15_000,
     });
     await expect(
       page.getByRole("heading", {
-        name: /din egen receptapp/i,
+        name: /matinspiration för vardag och helg/i,
       })
     ).toBeVisible();
+    await expect(page.getByPlaceholder(/sök recept/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Frukost" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Vegetariskt" })).toBeVisible();
   });
 
   test("recipe library page responds", async ({ page }) => {
     await page.goto("/recept", { waitUntil: "load" });
-    await expect(page.getByPlaceholder(/sök på recept/i)).toBeVisible({
+    await expect(page.getByPlaceholder(/sök recept/i)).toBeVisible({
       timeout: 15_000,
     });
   });
